@@ -117,6 +117,10 @@ export interface ResetPasswordPayload {
   newPassword: string;
 }
 
+export interface ResetPasswordResponse {
+  message: string;
+}
+
 // =============================================================================
 // 3. USER & ACCOUNT SETTINGS DOMAIN — /api/v1/users
 // All endpoints require: Authorization: Bearer <accessToken>
@@ -177,8 +181,7 @@ export type BoardStatus = 'active' | 'archived';
 export type BoardBadge =
   | 'ACTIVE PROJECT'
   | 'REVIEW REQUIRED'
-  | 'ARCHIVED'
-  | (string & {});
+  | 'ARCHIVED';
 
 /**
  * Icon shown on board cards indicating access level.
@@ -235,6 +238,8 @@ export interface GetBoardsQuery {
   limit?: number;
 }
 
+export type GetBoardsResponse = PaginatedResponse<Board>;
+
 /** POST /api/v1/boards */
 export interface CreateBoardPayload {
   title: string;
@@ -252,6 +257,10 @@ export interface UpdateBoardPayload {
 /** POST /api/v1/boards/:boardId/thumbnail — multipart/form-data */
 export interface UploadBoardThumbnailPayload {
   file: File | Blob;
+}
+
+export interface UploadBoardThumbnailResponse {
+  thumbnailUrl: string;
 }
 
 /**
@@ -279,8 +288,7 @@ export type TemplateCategory =
   | 'Brainstorming'
   | 'Design Systems'
   | 'Project Management'
-  | 'Agile Frameworks'
-  | (string & {});
+  | 'Agile Frameworks';
 
 export interface Template {
   id: UUID;
@@ -300,6 +308,9 @@ export interface GetTemplatesQuery {
   limit?: number;
 }
 
+export type GetTemplatesResponse = PaginatedResponse<Template>;
+export type GetTemplateResponse = Template;
+
 // =============================================================================
 // 6. COLLABORATION & SHARING DOMAIN
 // /api/v1/boards/:boardId/collaborators
@@ -315,6 +326,8 @@ export interface Collaborator {
   role: CollaboratorRole;
   joinedAt: ISODateString;
 }
+
+export type GetCollaboratorsResponse = Collaborator[];
 
 /** POST /api/v1/boards/:boardId/collaborators/invite */
 export interface InviteCollaboratorPayload {
@@ -343,6 +356,8 @@ export interface UpdateCollaboratorRolePayload {
   role: CollaboratorRole;
 }
 
+export type UpdateCollaboratorResponse = Collaborator;
+
 /** POST /api/v1/invites/redeem — standalone endpoint */
 export interface RedeemInvitePayload {
   inviteCode: string;
@@ -354,7 +369,7 @@ export interface RedeemInviteResponse {
 }
 
 // =============================================================================
-// 7. CANVAS STATE REST API — /api/v1/boards/:boardId/canvas
+// 6. CANVAS STATE REST API — /api/v1/boards/:boardId/canvas
 // =============================================================================
 
 export type CanvasElementType =
@@ -471,7 +486,7 @@ export interface SaveCanvasSnapshotPayload {
 }
 
 // =============================================================================
-// 8. BOARD HISTORY DOMAIN — /api/v1/boards/:boardId/history  [NEW DOMAIN]
+// 7. BOARD HISTORY DOMAIN — /api/v1/boards/:boardId/history  [NEW DOMAIN]
 // Powers the History panel (clock icon in canvas sidebar).
 // Long-term revision browsing and restore. Short-lived in-session undo/redo
 // is handled client-side via a local stack — no REST call per keystroke.
@@ -509,7 +524,7 @@ export interface RestoreBoardRevisionResponse {
 }
 
 // =============================================================================
-// 9. ACTIVE THREADS / CHAT DOMAIN — /api/v1/boards/:boardId/threads
+// 8. ACTIVE THREADS / CHAT DOMAIN — /api/v1/boards/:boardId/threads
 // =============================================================================
 
 export type ThreadStatus = 'open' | 'resolved';
@@ -552,11 +567,11 @@ export interface ReplyToThreadPayload {
 
 /** PATCH /api/v1/boards/:boardId/threads/:threadId */
 export interface UpdateThreadPayload {
-  status: ThreadStatus;
+  status: 'resolved';
 }
 
 // =============================================================================
-// 10. WEBSOCKET EVENTS — Namespace: /workspace
+// 9. WEBSOCKET EVENTS — Namespace: /workspace
 // =============================================================================
 
 export enum WsClientEvent {
@@ -614,8 +629,23 @@ export interface ClientToServerEvents {
 }
 
 // =============================================================================
-// 11. DASHBOARD & NAVIGATION UI STATE
+// 10. DASHBOARD & NAVIGATION UI STATE
 // =============================================================================
+
+export interface ForgotPasswordPageState {
+  email: string;
+  isSubmitting: boolean;
+  isSuccess: boolean;
+  error: string | null;
+}
+
+export interface ResetPasswordPageState {
+  newPassword: string;
+  confirmPassword: string;
+  isSubmitting: boolean;
+  isSuccess: boolean;
+  error: string | null;
+}
 
 export type DashboardViewMode = 'grid' | 'list';
 
@@ -631,7 +661,7 @@ export interface Notification {
 }
 
 // =============================================================================
-// 12. CANVAS WORKSPACE UI STATE
+// 11. CANVAS WORKSPACE UI STATE
 // =============================================================================
 
 export type CanvasTool =
