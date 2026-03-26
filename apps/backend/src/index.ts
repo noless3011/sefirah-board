@@ -2,9 +2,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import cors from 'cors';
 import apiRouter from './routes/index.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
+import setupWorkspaceSockets from './sockets/workspace.js';
 
 const requiredEnvVars = ['JWT_SECRET', 'CORS_ORIGIN'];
 const NODE_ENV = process.env.NODE_ENV ?? 'development';
@@ -20,6 +23,7 @@ if (NODE_ENV !== 'test') {
 const PORT = process.env.PORT ?? '4000';
 
 const app = express();
+const httpServer = createServer(app);
 
 const corsOrigin = process.env.CORS_ORIGIN ?? 'http://localhost:3000';
 app.use(cors({ 
@@ -40,6 +44,15 @@ app.use('/api/v1/invites', invitesRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-app.listen(Number(PORT), () => {
+const io = new Server(httpServer, {
+  cors: {
+    origin: corsOrigin,
+    credentials: true,
+  },
+});
+
+setupWorkspaceSockets(io);
+
+httpServer.listen(Number(PORT), () => {
   console.log(`[${NODE_ENV}] Backend listening on port ${PORT}`);
 });
