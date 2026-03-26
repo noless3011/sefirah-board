@@ -1,61 +1,84 @@
-# sefirah
+# Sefirah Board
 
-A monorepo containing a backend and a Vite + React frontend.
+A real-time collaborative whiteboarding and canvas application. This repository is structured as a monorepo containing a Node/TypeScript backend, a Vite + React frontend, and shared data models.
 
-## Project structure
+## Project Structure
 
-- backend/ — Node/TypeScript backend (see backend/package.json)
-- frontend/ — Vite + React TypeScript app (see frontend/package.json)
-- design/ — design assets
+This project uses npm workspaces to manage multiple packages:
+
+- `apps/frontend/` — Vite + React TypeScript application.
+- `apps/backend/` — Node/TypeScript backend powered by Express and Socket.io.
+- `packages/shared/` — Shared TypeScript models and API types used by both frontend and backend.
+- `design/` — Design assets and resources.
+
+## Key Features
+
+- **Real-time Collaboration:** Collaborative canvas with live cursor syncing via WebSocket.
+- **Canvas Workspaces:** Create frames, sticky notes, database/service architecture cards, shapes, images, and smart connectors.
+- **Board Management:** Personal and shared boards, custom templates, and access control (viewer/editor roles).
+- **History & Revisions:** Browse history snapshots and restore to previous states.
+- **Chat & Threads:** Pin contextual conversation threads directly onto canvas elements.
 
 ## Prerequisites
 
 - Node.js (LTS recommended)
-- npm or yarn
+- npm (version 7+ to support workspaces)
 
-## Quick start
+## Setup & Installation
 
-1. Install dependencies for each package:
+From the root of the repository, you can install the dependencies for all applications and packages at once:
 
 ```bash
-cd backend
-npm install
-
-cd ../frontend
 npm install
 ```
 
-2. Run locally (two terminals):
+## Running Locally
+
+Because this is a monorepo, you can run the applications from their respective directories. You will typically need two terminal sessions.
+
+**Terminal 1: Start the Backend**
 
 ```bash
-# Backend
-cd backend
-npm run dev   # or npm start as defined in backend/package.json
+cd apps/backend
+npx ts-node index.js # Or configure a 'dev'/'start' script in your package.json
+```
 
-# Frontend
-cd frontend
+**Terminal 2: Start the Frontend**
+
+```bash
+cd apps/frontend
 npm run dev
 ```
 
-3. Build for production:
+The frontend will start a local dev server (usually at `http://localhost:5173`).
+
+## Building for Production
+
+To build the project for production:
 
 ```bash
-cd frontend
+# Build Frontend
+cd apps/frontend
 npm run build
 
-cd ../backend
-npm run build   # if applicable
+# Build Backend
+cd apps/backend
+# Ensure a build script (e.g., tsc) is configured in your package.json
+npm run build
 ```
 
-## Notes
+## Documentation & Models
 
-- Check each package's `package.json` for exact script names and environment requirements.
-- TypeScript config files live in each package (`tsconfig.json`, `tsconfig.app.json`).
+- [API Documentation (`API.md`)](./API.md) — Exhaustive REST API endpoints and WebSocket event specifications.
+- [Shared Models (`packages/shared/Models.ts`)](./packages/shared/Models.ts) — Source-of-truth TypeScript definitions for the entire application, including the canvas, boards, users, and real-time events.
+- [Contribution Guidelines (`COMMIT.md`)](./COMMIT.md) — Workflow instructions, branch naming conventions, and the pull-request process.
 
-## Contributing
+## Contributing Workflow
 
-- Open an issue or submit a PR. Keep changes focused and add tests when appropriate.
+We follow an established git flow for contributing. Please refer to [COMMIT.md](./COMMIT.md) for full details.
 
-## License
-
-- Add your preferred license file (e.g., LICENSE) to this repository.
+1. Switch to and pull the `develop` branch.
+2. Create a new branch following the format: `<type>/<description-of-changes>`, for example, `feat/add-new-login-page`. Types include `feat`, `fix`, `refactor`, `style`, `docs`, `perf`, `test`, `chore`.
+3. Commit and push your changes to your branch.
+4. Create a Pull Request into `develop`.
+5. Request a review from maintaining members before merging. Do not merge your own PRs without approval.
