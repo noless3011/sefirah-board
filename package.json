@@ -1,0 +1,8 @@
+{
+  "name": "sefirah-board-workspace",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
