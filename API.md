@@ -46,7 +46,7 @@ Corresponds to the **Dashboard** (Recent, Shared, Templates tabs).
 | `GET` | `/:boardId` | — | Fetch board metadata (title, permissions, updatedAt). |
 | `PATCH` | `/:boardId` | `{ title?, isArchived?, badge?, visibilityIcon? }` | Rename, archive, change badge, or change visibility. |
 | `DELETE` | `/:boardId` | — | Delete a board. |
-| `POST` | `/:boardId/thumbnail` | `multipart/form-data: file (image)` | Upload a canvas screenshot as the board's thumbnail. Frontend captures the canvas and POSTs here. |
+| `POST` | `/:boardId/thumbnail` | `multipart/form-data: file (image)` | Upload a canvas screenshot as the board's thumbnail. Frontend captures the canvas and POSTs here. Returns `{ thumbnailUrl: string }`. |
 | `POST` | `/:boardId/export` | `{ format: 'png' \| 'pdf' \| 'svg' }` | **[NEW]** Export the board canvas. Returns `{ downloadUrl: string, expiresAt: ISODateString }`. Corresponds to the **Export** button in the canvas toolbar. |
 
 ### Board object (response shape)
