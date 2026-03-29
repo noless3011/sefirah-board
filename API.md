@@ -17,7 +17,7 @@ Handles registration, login, OAuth, and password management.
 | `POST` | `/oauth/github` | `{ code }` (from GitHub OAuth callback) | Sign in / register via GitHub. |
 | `POST` | `/refresh-token` | `{ refreshToken }` | Obtain a new access token when the current one expires. |
 | `POST` | `/forgot-password` | `{ email }` | Send a password-reset email containing a reset link/code. |
-| `POST` | `/reset-password` | `{ token: string, newPassword: string }` | **[NEW]** Complete the password-reset flow. `token` is extracted from the reset link emailed in the previous step. Returns `{ message: 'Password updated successfully' }`. |
+| `POST` | `/reset-password` | `{ token: string, newPassword: string }` | Complete the password-reset flow. `token` is extracted from the reset link emailed in the previous step. Returns `{ message: 'Password updated successfully' }`. |
 
 ---
 
@@ -47,7 +47,7 @@ Corresponds to the **Dashboard** (Recent, Shared, Templates tabs).
 | `PATCH` | `/:boardId` | `{ title?, isArchived?, badge?, visibilityIcon? }` | Rename, archive, change badge, or change visibility. |
 | `DELETE` | `/:boardId` | — | Delete a board. |
 | `POST` | `/:boardId/thumbnail` | `multipart/form-data: file (image)` | Upload a canvas screenshot as the board's thumbnail. Frontend captures the canvas and POSTs here. Returns `{ thumbnailUrl: string }`. |
-| `POST` | `/:boardId/export` | `{ format: 'png' \| 'pdf' \| 'svg' }` | **[NEW]** Export the board canvas. Returns `{ downloadUrl: string, expiresAt: ISODateString }`. Corresponds to the **Export** button in the canvas toolbar. |
+| `POST` | `/:boardId/export` | `{ format: 'png' \| 'pdf' \| 'svg' }` | Export the board canvas. Returns `{ downloadUrl: string, expiresAt: ISODateString }`. Corresponds to the **Export** button in the canvas toolbar. Note: this is an asynchronous operation — the server responds `202 Accepted` immediately and the `downloadUrl` becomes active once processing completes. Poll or use the WebSocket `board-update` notification to detect readiness. |
 
 ### Board object (response shape)
 
@@ -58,7 +58,7 @@ Corresponds to the **Dashboard** (Recent, Shared, Templates tabs).
   "thumbnailUrl": "https://...",
   "type": "personal | shared",
   "status": "active | archived",
-  "badge": "ACTIVE PROJECT | REVIEW REQUIRED | ARCHIVED | null",
+  "badge": "active-project | review-required | archived | null",
   "visibilityIcon": "private | shared | public",
   "ownerId": "uuid",
   "templateId": "uuid | null",
@@ -72,11 +72,13 @@ Corresponds to the **Dashboard** (Recent, Shared, Templates tabs).
 
 > **`sharedBy`** is populated only when `type === 'shared'`. It identifies the person who shared the board with the current user (visible on Shared board cards: "Shared by Sarah Jenkins").
 
+> **`badge`** uses lowercase kebab-case values: `active-project`, `review-required`, `archived`. These are data values — map them to display strings (`"ACTIVE PROJECT"` etc.) in the UI layer.
+
 ---
 
 ## 4. 📄 Domain: Templates (`/api/v1/templates`)
 
-**[NEW DOMAIN]** Corresponds to the **Templates** page. Templates are read-only; boards are created from them via `POST /boards` with a `templateId`.
+Corresponds to the **Templates** page. Templates are read-only; boards are created from them via `POST /boards` with a `templateId`.
 
 | Method | Endpoint | Query / Body | Description |
 | :--- | :--- | :--- | :--- |
@@ -106,16 +108,16 @@ Corresponds to the **Share** button and the **Redeem Invite** feature.
 | :--- | :--- | :--- | :--- |
 | `GET` | `/` | — | List all members with access to this board. |
 | `POST` | `/invite` | `{ email: string, role: 'viewer' \| 'editor' }` | Invite a collaborator by email. |
-| `POST` | `/link` | `{ role: 'viewer' \| 'editor', expiresInHours?: number }` | **[NEW]** Generate a shareable invite link/code. Returns `{ inviteCode, inviteUrl, expiresAt }`. Powers the copy-link flow in the Share modal. |
+| `POST` | `/link` | `{ role: 'viewer' \| 'editor', expiresInHours?: number }` | Generate a shareable invite link/code. Returns `{ inviteCode, inviteUrl, expiresAt }`. Powers the copy-link flow in the Share modal. |
 | `PATCH` | `/:userId` | `{ role: 'viewer' \| 'editor' }` | Change a member's role. |
-| `DELETE` | `/:userId` | — | Revoke a member's access. |
+| `DELETE` | `/:userId` | — | Revoke a member's access. Returns `{ message: string }`. |
 | `POST` | `/api/v1/invites/redeem` | `{ inviteCode: string }` | (Standalone endpoint) Join a shared board using a code. Corresponds to the **Redeem Invite** card on the Shared page. |
 
 ---
 
 ## 6. 🎨 Domain: Canvas State REST API (`/api/v1/boards/:boardId/canvas`)
 
-REST endpoints for initial load and periodic auto-save. Real-time sync is handled via WebSocket (see section 8).
+REST endpoints for initial load and periodic auto-save. Real-time sync is handled via WebSocket (see section 9).
 
 | Method | Endpoint | Payload (Body) | Description |
 | :--- | :--- | :--- | :--- |
@@ -126,15 +128,15 @@ REST endpoints for initial load and periodic auto-save. Real-time sync is handle
 
 ## 7. 🕰️ Domain: Board History (`/api/v1/boards/:boardId/history`)
 
-**[NEW DOMAIN]** Corresponds to the **Undo / Redo** arrows in the canvas toolbar header.
+Corresponds to the **History Panel** (clock icon in the canvas sidebar) for long-term revision browsing and restore.
+
+> **Note on undo/redo UX:** Short-lived, in-session undo/redo (Ctrl+Z / Ctrl+Y) is handled client-side via a local history stack and WebSocket `element-update` events — no REST call needed per keystroke. The REST History API backs the **History Panel** for longer-term revision browsing and restore.
 
 | Method | Endpoint | Query / Body | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/` | Query: `?limit=50` | List recent revision snapshots for this board (timestamp + authorId + element count). Used to populate the history panel. |
 | `GET` | `/:revisionId` | — | Fetch the full canvas state for a specific revision. Used to preview or restore a past state. |
 | `POST` | `/restore` | `{ revisionId: string }` | Restore the board to a past revision. Creates a new revision entry so the action itself is undoable. |
-
-> **Note on undo/redo UX:** Short-lived, in-session undo/redo (Ctrl+Z / Ctrl+Y) is handled client-side via a local history stack and WebSocket `element-update` events — no REST call needed per keystroke. The REST History API backs the **History Panel** (the clock icon in the sidebar) for longer-term revision browsing and restore.
 
 ### Revision object (response shape)
 
@@ -159,13 +161,55 @@ Corresponds to the **CHAT** tab and the red comment bubbles pinned to canvas ele
 | Method | Endpoint | Payload (Body) | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/` | — | Fetch all comment threads on this board. |
-| `POST` | `/` | `{ targetElementId: string, message: string }` | Create a new thread pinned to a canvas element (e.g. the "Need to update API docs" sticky note). |
+| `POST` | `/` | `{ targetElementId: string, message: string }` | Create a new thread pinned to a canvas element. |
 | `POST` | `/:threadId/reply` | `{ message: string }` | Reply within an existing thread. |
 | `PATCH` | `/:threadId` | `{ status: 'resolved' }` | Mark a thread as resolved. |
 
 ---
 
-## 9. 🚀 Domain: WebSocket Events (Namespace: `/workspace`)
+## 9. 🔔 Domain: Notifications (`/api/v1/notifications`)
+
+Corresponds to the **notification bell** in the dashboard header. All endpoints require `Authorization: Bearer <token>`.
+
+Notifications are generated server-side by the following triggers:
+
+| Type | Trigger |
+| :--- | :--- |
+| `invite` | Another user invites you to a board via email or invite link. |
+| `comment` | A new comment thread is created on a board you have access to. |
+| `mention` | Your name is mentioned in a thread message. |
+| `board-update` | A board you own or collaborate on is renamed, archived, or has its badge changed. |
+
+### Endpoints
+
+| Method | Endpoint | Query / Body | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/` | Query: `?isRead=true\|false`, `&page=1`, `&limit=20` | List notifications for the current user, newest first. Omit `isRead` to return all. Returns a paginated response. |
+| `GET` | `/unread-count` | — | Returns `{ unreadCount: number }`. Intended for lightweight polling to drive the bell badge — call this on dashboard load and after relevant WebSocket events rather than polling the full list. |
+| `PATCH` | `/:notificationId` | `{ isRead: boolean }` | Mark a single notification as read or unread. Returns the updated notification object. |
+| `POST` | `/mark-all-read` | — | Mark all unread notifications for the current user as read. Returns `{ updatedCount: number }`. |
+| `DELETE` | `/:notificationId` | — | Permanently delete a single notification. Returns `204 No Content`. |
+
+### Notification object (response shape)
+
+```json
+{
+  "id": "uuid",
+  "type": "invite | comment | mention | board-update",
+  "message": "Sarah Jenkins invited you to collaborate on \"YOLO/VAE Architecture\".",
+  "boardId": "uuid | undefined",
+  "isRead": false,
+  "createdAt": "ISO"
+}
+```
+
+> **`boardId`** is present for all notification types except account-level events. Use it to navigate the user directly to the relevant board when they click the notification.
+
+> **Real-time delivery:** New notifications are also pushed over the WebSocket connection (namespace `/workspace`) as a `notification` server event with the full notification object as payload. The REST endpoints are the source of truth for persistence, history, and read-state management; the WebSocket event is a delivery hint to trigger a UI update without requiring the client to poll.
+
+---
+
+## 10. 🚀 Domain: WebSocket Events (Namespace: `/workspace`)
 
 Bidirectional real-time communication via Socket.io. Uses **Emit** (client → server) and **Listen** (server → client) rather than traditional HTTP.
 
@@ -194,3 +238,9 @@ Bidirectional real-time communication via Socket.io. Uses **Emit** (client → s
 | Server → FE | `element-updated` | `{ id, changes }` | Relay update to other clients. |
 | FE → Server | `element-delete` | `{ id }` | An element was deleted. |
 | Server → FE | `element-deleted` | `{ id }` | Relay deletion to other clients. |
+
+### D. Notifications
+
+| Direction | Event | Payload | Description |
+| :--- | :--- | :--- | :--- |
+| Server → FE | `notification` | Full `Notification` object (see section 9) | Pushed to the recipient's socket when a new notification is generated. Use this to refresh the bell badge and prepend the item to the notification list without polling. |
