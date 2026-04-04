@@ -1,717 +1,941 @@
 // =============================================================================
-// SEFIRAH BOARD — TypeScript Models (v2)
+// SEFIRAH BOARD — TypeScript Models (v3)
 // Domains: Auth · User · Board · Templates · Collaboration · Canvas ·
-//          History · Threads/Chat · WebSocket · UI State
+//          History · Threads/Chat · Notifications · WebSocket · UI State
 // =============================================================================
-
+import {z} from 'zod'
 // =============================================================================
 // 1. SHARED / PRIMITIVE TYPES
 // =============================================================================
 
 /** ISO 8601 datetime string, e.g. "2024-11-01T12:00:00.000Z" */
-export type ISODateString = string;
+export const ISODateStringSchema = z.iso.datetime();
+export type ISODateString = z.infer<typeof ISODateStringSchema>;
 
 /** UUID v4 string */
-export type UUID = string;
+export const UUIDSchema = z.uuid();
+export type UUID = z.infer<typeof UUIDSchema>;
 
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
+export const PaginationMetaSchema = z.object({
+  page: z.number().int().nonnegative(),
+  limit: z.number().int().positive(),
+  total: z.number().int().nonnegative(),
+  totalPages: z.number().int().nonnegative(),
+});
+export type PaginationMeta = z.infer<typeof PaginationMetaSchema>;
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: PaginationMeta;
-}
+/** * Generic Zod schema builder for PaginatedResponse.
+ * Usage: const UsersPaginatedSchema = PaginatedResponseSchema(UserSchema);
+ */
+export const PaginatedResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+  z.object({
+    data: z.array(dataSchema),
+    meta: PaginationMetaSchema,
+  });
 
-export interface ApiResponse<T = void> {
-  success: boolean;
-  message?: string;
-  data: T;
-}
+/** * Generic Zod schema builder for ApiResponse.
+ * Usage: const AuthResponseApiSchema = ApiResponseSchema(AuthResponseSchema);
+ */
+export const ApiResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+  z.object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    data: dataSchema,
+  });
 
-export interface ApiError {
-  success: false;
-  statusCode: number;
-  error: string;
-  message: string;
+export const ApiErrorSchema = z.object({
+  success: z.literal(false),
+  statusCode: z.number().int().positive(),
+  error: z.string(),
+  message: z.string(),
   /** Field-level validation errors, keyed by field name */
-  details?: Record<string, string[]>;
-}
+  details: z.record(z.string(), z.array(z.string())).optional(),
+});
+export type ApiError = z.infer<typeof ApiErrorSchema>;
 
 // =============================================================================
 // 2. AUTH DOMAIN — /api/v1/auth
 // =============================================================================
 
-export interface AuthUser {
-  id: UUID;
-  email: string;
-  fullName: string;
-  avatarUrl: string | null;
-  createdAt: ISODateString;
-}
+export const AuthUserSchema = z.object({
+  id: UUIDSchema,
+  email: z.email(),
+  fullName: z.string().min(1, "Full name is required"),
+  avatarUrl: z.url().nullable(),
+  createdAt: ISODateStringSchema,
+});
+export type AuthUser = z.infer<typeof AuthUserSchema>;
 
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-}
+export const AuthTokensSchema = z.object({
+  accessToken: z.string().min(1),
+  refreshToken: z.string().min(1),
+});
+export type AuthTokens = z.infer<typeof AuthTokensSchema>;
 
-export interface AuthResponse {
-  user: AuthUser;
-  accessToken: string;
-  refreshToken: string;
-}
+export const AuthResponseSchema = z.object({
+  user: AuthUserSchema,
+  accessToken: z.string().min(1),
+  refreshToken: z.string().min(1),
+});
+export type AuthResponse = z.infer<typeof AuthResponseSchema>;
 
 /** POST /api/v1/auth/register */
-export interface RegisterPayload {
-  fullName: string;
-  email: string;
-  password: string;
-}
+export const RegisterPayloadSchema = z.object({
+  fullName: z.string().min(1, "Full name is required"),
+  email: z.email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
+});
+export type RegisterPayload = z.infer<typeof RegisterPayloadSchema>;
 
 /**
  * POST /api/v1/auth/login
- * rememberMe: true extends refresh token TTL — maps to the "Remember Me"
- * checkbox on the Login page.
+ * rememberMe: true extends refresh token TTL
  */
-export interface LoginPayload {
-  email: string;
-  password: string;
-  rememberMe?: boolean;
-}
+export const LoginPayloadSchema = z.object({
+  email: z.email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+  rememberMe: z.boolean().optional(),
+});
+export type LoginPayload = z.infer<typeof LoginPayloadSchema>;
 
 /** POST /api/v1/auth/oauth/google */
-export interface GoogleOAuthPayload {
-  token: string;
-}
+export const GoogleOAuthPayloadSchema = z.object({
+  token: z.string().min(1, "OAuth token is required"),
+});
+export type GoogleOAuthPayload = z.infer<typeof GoogleOAuthPayloadSchema>;
 
 /** POST /api/v1/auth/oauth/github */
-export interface GitHubOAuthPayload {
-  code: string;
-}
+export const GitHubOAuthPayloadSchema = z.object({
+  code: z.string().min(1, "OAuth code is required"),
+});
+export type GitHubOAuthPayload = z.infer<typeof GitHubOAuthPayloadSchema>;
 
 /** POST /api/v1/auth/refresh-token */
-export interface RefreshTokenPayload {
-  refreshToken: string;
-}
+export const RefreshTokenPayloadSchema = z.object({
+  refreshToken: z.string().min(1, "Refresh token is required"),
+});
+export type RefreshTokenPayload = z.infer<typeof RefreshTokenPayloadSchema>;
 
-export interface RefreshTokenResponse {
-  accessToken: string;
-  refreshToken: string;
-}
+export const RefreshTokenResponseSchema = z.object({
+  accessToken: z.string().min(1),
+  refreshToken: z.string().min(1),
+});
+export type RefreshTokenResponse = z.infer<typeof RefreshTokenResponseSchema>;
 
 /** POST /api/v1/auth/forgot-password */
-export interface ForgotPasswordPayload {
-  email: string;
-}
+export const ForgotPasswordPayloadSchema = z.object({
+  email: z.email("Invalid email address"),
+});
+export type ForgotPasswordPayload = z.infer<typeof ForgotPasswordPayloadSchema>;
 
-/**
- * POST /api/v1/auth/reset-password  [NEW]
- * Second step of the forgot-password flow. `token` comes from the reset link
- * emailed to the user after POST /forgot-password.
- */
-export interface ResetPasswordPayload {
-  token: string;
-  newPassword: string;
-}
+/** POST /api/v1/auth/reset-password */
+export const ResetPasswordPayloadSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters long"),
+});
+export type ResetPasswordPayload = z.infer<typeof ResetPasswordPayloadSchema>;
 
-export interface ResetPasswordResponse {
-  message: string;
-}
+export const ResetPasswordResponseSchema = z.object({
+  message: z.string(),
+});
+export type ResetPasswordResponse = z.infer<typeof ResetPasswordResponseSchema>;
 
 // =============================================================================
 // 3. USER & ACCOUNT SETTINGS DOMAIN — /api/v1/users
 // All endpoints require: Authorization: Bearer <accessToken>
 // =============================================================================
 
-export interface UserPreferences {
-  /** "Email Notifications" toggle — Account Settings > Preferences */
-  emailNotifications: boolean;
-  /** "Real-time Cursor Visibility" toggle — controls WS cursor-move events */
-  cursorVisibility: boolean;
-}
+export const UserPreferencesSchema = z.object({
+  emailNotifications: z.boolean(),
+  cursorVisibility: z.boolean(),
+});
+export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
 
-export interface User {
-  id: UUID;
-  fullName: string;
-  email: string;
-  avatarUrl: string | null;
-  preferences: UserPreferences;
-  createdAt: ISODateString;
-  updatedAt: ISODateString;
-}
+export const UserSchema = z.object({
+  id: UUIDSchema,
+  fullName: z.string().min(1, "Full name is required"),
+  email: z.email(),
+  avatarUrl: z.url().nullable(),
+  preferences: UserPreferencesSchema,
+  createdAt: ISODateStringSchema,
+  updatedAt: ISODateStringSchema,
+});
+export type User = z.infer<typeof UserSchema>;
 
 /** PATCH /api/v1/users/me/profile */
-export interface UpdateProfilePayload {
-  fullName?: string;
-  avatarUrl?: string | null;
-}
+export const UpdateProfilePayloadSchema = z.object({
+  fullName: z.string().min(1).optional(),
+  avatarUrl: z.url().nullable().optional(),
+});
+export type UpdateProfilePayload = z.infer<typeof UpdateProfilePayloadSchema>;
 
 /** PUT /api/v1/users/me/password */
-export interface UpdatePasswordPayload {
-  currentPassword: string;
-  newPassword: string;
-}
+export const UpdatePasswordPayloadSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(8, "New password must be at least 8 characters long"),
+});
+export type UpdatePasswordPayload = z.infer<typeof UpdatePasswordPayloadSchema>;
 
 /** PATCH /api/v1/users/me/preferences */
-export interface UpdatePreferencesPayload {
-  emailNotifications?: boolean;
-  cursorVisibility?: boolean;
-}
+export const UpdatePreferencesPayloadSchema = z.object({
+  emailNotifications: z.boolean().optional(),
+  cursorVisibility: z.boolean().optional(),
+});
+export type UpdatePreferencesPayload = z.infer<typeof UpdatePreferencesPayloadSchema>;
 
 /** DELETE /api/v1/users/me */
-export interface DeactivateAccountPayload {
-  password: string;
-}
+export const DeactivateAccountPayloadSchema = z.object({
+  password: z.string().min(1, "Password is required to deactivate account"),
+});
+export type DeactivateAccountPayload = z.infer<typeof DeactivateAccountPayloadSchema>;
 
 // =============================================================================
 // 4. BOARD MANAGEMENT DOMAIN — /api/v1/boards
 // =============================================================================
 
-export type BoardType = 'personal' | 'shared';
+export const BoardTypeSchema = z.enum(['personal', 'shared']);
+export type BoardType = z.infer<typeof BoardTypeSchema>;
 
-export type BoardStatus = 'active' | 'archived';
+export const BoardStatusSchema = z.enum(['active', 'archived']);
+export type BoardStatus = z.infer<typeof BoardStatusSchema>;
 
-/**
- * Status badge shown on board cards.
- * Visible in Dashboard and Shared page screenshots.
- */
-export type BoardBadge =
-  | 'ACTIVE PROJECT'
-  | 'REVIEW REQUIRED'
-  | 'ARCHIVED';
+// FIX: Normalized badge values to lowercase kebab-case to match all other enum conventions.
+export const BoardBadgeSchema = z.enum(['active-project', 'review-required', 'archived']);
+export type BoardBadge = z.infer<typeof BoardBadgeSchema>;
 
-/**
- * Icon shown on board cards indicating access level.
- * - 'private'  → lock icon
- * - 'shared'   → people icon
- * - 'public'   → globe icon
- */
-export type BoardVisibility = 'private' | 'shared' | 'public';
+export const BoardVisibilitySchema = z.enum(['private', 'shared', 'public']);
+export type BoardVisibility = z.infer<typeof BoardVisibilitySchema>;
 
-export type ExportFormat = 'png' | 'pdf' | 'svg';
+export const ExportFormatSchema = z.enum(['png', 'pdf', 'svg']);
+export type ExportFormat = z.infer<typeof ExportFormatSchema>;
 
-export interface BoardCollaboratorSummary {
-  userId: UUID;
-  fullName: string;
-  avatarUrl: string | null;
-}
+export const BoardCollaboratorSummarySchema = z.object({
+  userId: UUIDSchema,
+  fullName: z.string(),
+  avatarUrl: z.url().nullable(),
+});
+export type BoardCollaboratorSummary = z.infer<typeof BoardCollaboratorSummarySchema>;
 
-/**
- * The person who shared a board with the current user.
- * Populated only when Board.type === 'shared'.
- * Shown on Shared page board cards: "Shared by Sarah Jenkins".
- */
-export interface SharedBy {
-  userId: UUID;
-  fullName: string;
-  avatarUrl: string | null;
-}
+export const SharedBySchema = z.object({
+  userId: UUIDSchema,
+  fullName: z.string(),
+  avatarUrl: z.url().nullable(),
+});
+export type SharedBy = z.infer<typeof SharedBySchema>;
 
-export interface Board {
-  id: UUID;
-  title: string;
-  thumbnailUrl: string | null;
-  type: BoardType;
-  status: BoardStatus;
-  badge: BoardBadge | null;
-  visibilityIcon: BoardVisibility;
-  ownerId: UUID;
-  templateId: UUID | null;
-  /** Only present when type === 'shared' */
-  sharedBy: SharedBy | null;
-  /** Subset of collaborators displayed as avatars on the card */
-  collaborators: BoardCollaboratorSummary[];
-  /** Count rendered as "+N" beyond the visible avatars */
-  extraCollaboratorsCount: number;
-  createdAt: ISODateString;
-  updatedAt: ISODateString;
-}
+export const BoardSchema = z.object({
+  id: UUIDSchema,
+  title: z.string().min(1, "Board title is required"),
+  thumbnailUrl: z.url().nullable(),
+  type: BoardTypeSchema,
+  status: BoardStatusSchema,
+  badge: BoardBadgeSchema.nullable(),
+  visibilityIcon: BoardVisibilitySchema,
+  ownerId: UUIDSchema,
+  templateId: UUIDSchema.nullable(),
+  sharedBy: SharedBySchema.nullable(),
+  collaborators: z.array(BoardCollaboratorSummarySchema),
+  extraCollaboratorsCount: z.number().int().nonnegative(),
+  createdAt: ISODateStringSchema,
+  updatedAt: ISODateStringSchema,
+});
+export type Board = z.infer<typeof BoardSchema>;
 
 /** GET /api/v1/boards — query parameters */
-export interface GetBoardsQuery {
-  type?: BoardType;
-  search?: string;
-  page?: number;
-  limit?: number;
-}
+export const GetBoardsQuerySchema = z.object({
+  type: BoardTypeSchema.optional(),
+  search: z.string().optional(),
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().optional(),
+});
+export type GetBoardsQuery = z.infer<typeof GetBoardsQuerySchema>;
 
-export type GetBoardsResponse = PaginatedResponse<Board>;
+export const GetBoardsResponseSchema = PaginatedResponseSchema(BoardSchema);
+export type GetBoardsResponse = z.infer<typeof GetBoardsResponseSchema>;
 
 /** POST /api/v1/boards */
-export interface CreateBoardPayload {
-  title: string;
-  templateId?: UUID;
-}
+export const CreateBoardPayloadSchema = z.object({
+  title: z.string().min(1, "Board title is required"),
+  templateId: UUIDSchema.optional(),
+});
+export type CreateBoardPayload = z.infer<typeof CreateBoardPayloadSchema>;
 
 /** PATCH /api/v1/boards/:boardId */
-export interface UpdateBoardPayload {
-  title?: string;
-  isArchived?: boolean;
-  badge?: BoardBadge | null;
-  visibilityIcon?: BoardVisibility;
-}
-
-/** POST /api/v1/boards/:boardId/thumbnail — multipart/form-data */
-export interface UploadBoardThumbnailPayload {
-  file: File | Blob;
-}
-
-export interface UploadBoardThumbnailResponse {
-  thumbnailUrl: string;
-}
+export const UpdateBoardPayloadSchema = z.object({
+  title: z.string().min(1).optional(),
+  isArchived: z.boolean().optional(),
+  badge: BoardBadgeSchema.nullable().optional(),
+  visibilityIcon: BoardVisibilitySchema.optional(),
+});
+export type UpdateBoardPayload = z.infer<typeof UpdateBoardPayloadSchema>;
 
 /**
- * POST /api/v1/boards/:boardId/export  [NEW]
- * Corresponds to the Export button in the canvas toolbar header.
+ * POST /api/v1/boards/:boardId/thumbnail — multipart/form-data
+ *
+ * Note: This schema is intentionally client-side only. On the server, validate
+ * against the runtime file object provided by your multipart middleware
+ * (e.g. Express multer's req.file) rather than using this Zod schema directly.
  */
-export interface ExportBoardPayload {
-  format: ExportFormat;
-}
+export const UploadBoardThumbnailPayloadSchema = z.object({
+  file: z.instanceof(File, { message: "A valid File object is required" }),
+});
+export type UploadBoardThumbnailPayload = z.infer<typeof UploadBoardThumbnailPayloadSchema>;
 
-export interface ExportBoardResponse {
-  /** Pre-signed URL for the exported file */
-  downloadUrl: string;
-  expiresAt: ISODateString;
-}
+export const UploadBoardThumbnailResponseSchema = z.object({
+  thumbnailUrl: z.url(),
+});
+export type UploadBoardThumbnailResponse = z.infer<typeof UploadBoardThumbnailResponseSchema>;
+
+/** POST /api/v1/boards/:boardId/export */
+export const ExportBoardPayloadSchema = z.object({
+  format: ExportFormatSchema,
+});
+export type ExportBoardPayload = z.infer<typeof ExportBoardPayloadSchema>;
+
+export const ExportBoardResponseSchema = z.object({
+  downloadUrl: z.url(),
+  expiresAt: ISODateStringSchema,
+});
+export type ExportBoardResponse = z.infer<typeof ExportBoardResponseSchema>;
 
 // =============================================================================
-// 5. TEMPLATES DOMAIN — /api/v1/templates  [NEW DOMAIN]
-// Corresponds to the Templates page with category filter tabs.
+// 5. TEMPLATES DOMAIN — /api/v1/templates
 // Templates are read-only; use POST /boards with templateId to create from one.
 // =============================================================================
 
-export type TemplateCategory =
-  | 'Flowcharts'
-  | 'Brainstorming'
-  | 'Design Systems'
-  | 'Project Management'
-  | 'Agile Frameworks';
+export const TemplateCategorySchema = z.enum([
+  'Flowcharts',
+  'Brainstorming',
+  'Design Systems',
+  'Project Management',
+  'Agile Frameworks',
+]);
+export type TemplateCategory = z.infer<typeof TemplateCategorySchema>;
 
-export interface Template {
-  id: UUID;
-  title: string;
-  description: string;
-  thumbnailUrl: string | null;
-  category: TemplateCategory;
-  createdAt: ISODateString;
-}
+export const TemplateSchema = z.object({
+  id: UUIDSchema,
+  title: z.string().min(1, "Template title is required"),
+  description: z.string(),
+  thumbnailUrl: z.url().nullable(),
+  category: TemplateCategorySchema,
+  createdAt: ISODateStringSchema,
+});
+export type Template = z.infer<typeof TemplateSchema>;
 
 /** GET /api/v1/templates — query parameters */
-export interface GetTemplatesQuery {
+export const GetTemplatesQuerySchema = z.object({
   /** Omit to return all templates (the "All Templates" tab) */
-  category?: TemplateCategory;
-  search?: string;
-  page?: number;
-  limit?: number;
-}
+  category: TemplateCategorySchema.optional(),
+  search: z.string().optional(),
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().optional(),
+});
+export type GetTemplatesQuery = z.infer<typeof GetTemplatesQuerySchema>;
 
-export type GetTemplatesResponse = PaginatedResponse<Template>;
-export type GetTemplateResponse = Template;
+export const GetTemplatesResponseSchema = PaginatedResponseSchema(TemplateSchema);
+export type GetTemplatesResponse = z.infer<typeof GetTemplatesResponseSchema>;
+
+export const GetTemplateResponseSchema = TemplateSchema;
+export type GetTemplateResponse = z.infer<typeof GetTemplateResponseSchema>;
 
 // =============================================================================
 // 6. COLLABORATION & SHARING DOMAIN
 // /api/v1/boards/:boardId/collaborators
 // =============================================================================
 
-export type CollaboratorRole = 'viewer' | 'editor';
+export const CollaboratorRoleSchema = z.enum(['viewer', 'editor']);
+export type CollaboratorRole = z.infer<typeof CollaboratorRoleSchema>;
 
-export interface Collaborator {
-  userId: UUID;
-  fullName: string;
-  email: string;
-  avatarUrl: string | null;
-  role: CollaboratorRole;
-  joinedAt: ISODateString;
-}
+export const CollaboratorSchema = z.object({
+  userId: UUIDSchema,
+  fullName: z.string().min(1, "Full name is required"),
+  email: z.email(),
+  avatarUrl: z.url().nullable(),
+  role: CollaboratorRoleSchema,
+  joinedAt: ISODateStringSchema,
+});
+export type Collaborator = z.infer<typeof CollaboratorSchema>;
 
-export type GetCollaboratorsResponse = Collaborator[];
+export const GetCollaboratorsResponseSchema = z.array(CollaboratorSchema);
+export type GetCollaboratorsResponse = z.infer<typeof GetCollaboratorsResponseSchema>;
 
 /** POST /api/v1/boards/:boardId/collaborators/invite */
-export interface InviteCollaboratorPayload {
-  email: string;
-  role: CollaboratorRole;
-}
+export const InviteCollaboratorPayloadSchema = z.object({
+  email: z.email("Invalid email address"),
+  role: CollaboratorRoleSchema,
+});
+export type InviteCollaboratorPayload = z.infer<typeof InviteCollaboratorPayloadSchema>;
 
 /**
- * POST /api/v1/boards/:boardId/collaborators/link  [NEW]
+ * POST /api/v1/boards/:boardId/collaborators/link
  * Generates a shareable invite link/code for the Share modal copy-link flow.
  */
-export interface GenerateInviteLinkPayload {
-  role: CollaboratorRole;
+export const GenerateInviteLinkPayloadSchema = z.object({
+  role: CollaboratorRoleSchema,
   /** Validity duration in hours. Defaults to 72 if omitted. */
-  expiresInHours?: number;
-}
+  expiresInHours: z.number().int().positive().optional(),
+});
+export type GenerateInviteLinkPayload = z.infer<typeof GenerateInviteLinkPayloadSchema>;
 
-export interface GenerateInviteLinkResponse {
-  inviteCode: string;
-  inviteUrl: string;
-  expiresAt: ISODateString;
-}
+export const GenerateInviteLinkResponseSchema = z.object({
+  inviteCode: z.string().min(1),
+  inviteUrl: z.url(),
+  expiresAt: ISODateStringSchema,
+});
+export type GenerateInviteLinkResponse = z.infer<typeof GenerateInviteLinkResponseSchema>;
 
 /** PATCH /api/v1/boards/:boardId/collaborators/:userId */
-export interface UpdateCollaboratorRolePayload {
-  role: CollaboratorRole;
-}
+export const UpdateCollaboratorRolePayloadSchema = z.object({
+  role: CollaboratorRoleSchema,
+});
+export type UpdateCollaboratorRolePayload = z.infer<typeof UpdateCollaboratorRolePayloadSchema>;
 
-export type UpdateCollaboratorResponse = Collaborator;
+export const UpdateCollaboratorResponseSchema = CollaboratorSchema;
+export type UpdateCollaboratorResponse = z.infer<typeof UpdateCollaboratorResponseSchema>;
+
+// FIX: Added missing RemoveCollaboratorResponseSchema for DELETE /collaborators/:userId.
+export const RemoveCollaboratorResponseSchema = z.object({
+  message: z.string(),
+});
+export type RemoveCollaboratorResponse = z.infer<typeof RemoveCollaboratorResponseSchema>;
 
 /** POST /api/v1/invites/redeem — standalone endpoint */
-export interface RedeemInvitePayload {
-  inviteCode: string;
-}
+export const RedeemInvitePayloadSchema = z.object({
+  inviteCode: z.string().min(1, "Invite code is required"),
+});
+export type RedeemInvitePayload = z.infer<typeof RedeemInvitePayloadSchema>;
 
-export interface RedeemInviteResponse {
-  board: Board;
-  role: CollaboratorRole;
-}
+export const RedeemInviteResponseSchema = z.object({
+  board: BoardSchema,
+  role: CollaboratorRoleSchema,
+});
+export type RedeemInviteResponse = z.infer<typeof RedeemInviteResponseSchema>;
 
 // =============================================================================
-// 6. CANVAS STATE REST API — /api/v1/boards/:boardId/canvas
+// 7. CANVAS STATE REST API — /api/v1/boards/:boardId/canvas
 // =============================================================================
 
-export type CanvasElementType =
-  | 'rectangle'
-  | 'ellipse'
-  | 'diamond'
-  | 'triangle'
-  | 'line'
-  | 'arrow'
-  | 'connector'
-  | 'text'
-  | 'sticky-note'
-  | 'image'
-  | 'frame'
-  | 'service-card'   // e.g. "Auth Gateway" in Workspace screenshot
-  | 'database-card'; // e.g. "User Registry" in Workspace screenshot
+export const CanvasElementTypeSchema = z.enum([
+  'rectangle', 'ellipse', 'diamond', 'triangle', 'line', 'arrow', 'connector',
+  'text', 'sticky-note', 'image', 'frame', 'service-card', 'database-card'
+]);
+export type CanvasElementType = z.infer<typeof CanvasElementTypeSchema>;
 
-export type TextAlign = 'left' | 'center' | 'right';
-export type FontWeight = 'normal' | 'medium' | 'semibold' | 'bold';
+export const TextAlignSchema = z.enum(['left', 'center', 'right']);
+export type TextAlign = z.infer<typeof TextAlignSchema>;
 
-export interface CanvasElementAppearance {
-  fillColor?: string;
-  strokeColor?: string;
-  /** Maps to the Border Width slider in the Properties panel */
-  strokeWidth?: number;
-  opacity?: number;
-  /** e.g. "Manrope SemiBold" — matches Typography dropdown in Properties panel */
-  fontFamily?: string;
-  fontSize?: number;
-  fontWeight?: FontWeight;
-  textAlign?: TextAlign;
-  borderRadius?: number;
-}
+export const FontWeightSchema = z.enum(['normal', 'medium', 'semibold', 'bold']);
+export type FontWeight = z.infer<typeof FontWeightSchema>;
 
-export interface BaseCanvasElement {
-  id: UUID;
+export const CanvasElementAppearanceSchema = z.object({
+  fillColor: z.string().optional(),
+  strokeColor: z.string().optional(),
+  strokeWidth: z.number().nonnegative().optional(),
+  opacity: z.number().min(0).max(1).optional(),
+  fontFamily: z.string().optional(),
+  fontSize: z.number().positive().optional(),
+  fontWeight: FontWeightSchema.optional(),
+  textAlign: TextAlignSchema.optional(),
+  borderRadius: z.number().nonnegative().optional(),
+});
+export type CanvasElementAppearance = z.infer<typeof CanvasElementAppearanceSchema>;
+
+// Base schema omitting 'type' so we can strictly enforce it in the extended schemas
+const BaseCanvasElementSchemaBase = z.object({
+  id: UUIDSchema,
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+  rotation: z.number(),
+  zIndex: z.number().int(),
+  isLocked: z.boolean(),
+  appearance: CanvasElementAppearanceSchema,
+  createdBy: UUIDSchema,
+  createdAt: ISODateStringSchema,
+  updatedAt: ISODateStringSchema,
+});
+
+export const TextElementSchema = BaseCanvasElementSchemaBase.extend({
+  type: z.enum(['text', 'sticky-note']),
+  content: z.string(),
+});
+export type TextElement = z.infer<typeof TextElementSchema>;
+
+export const ServiceCardElementSchema = BaseCanvasElementSchemaBase.extend({
+  type: z.literal('service-card'),
+  badge: z.string(),
+  title: z.string(),
+  description: z.string(),
+});
+export type ServiceCardElement = z.infer<typeof ServiceCardElementSchema>;
+
+export const DatabaseCardElementSchema = BaseCanvasElementSchemaBase.extend({
+  type: z.literal('database-card'),
+  badge: z.string(),
+  title: z.string(),
+  description: z.string(),
+});
+export type DatabaseCardElement = z.infer<typeof DatabaseCardElementSchema>;
+
+export const ShapeElementSchema = BaseCanvasElementSchemaBase.extend({
+  type: z.enum(['rectangle', 'ellipse', 'diamond', 'triangle']),
+});
+export type ShapeElement = z.infer<typeof ShapeElementSchema>;
+
+export const ConnectorElementSchema = BaseCanvasElementSchemaBase.extend({
+  type: z.enum(['line', 'arrow', 'connector']),
+  startElementId: UUIDSchema.optional(),
+  endElementId: UUIDSchema.optional(),
+  points: z.array(z.object({ x: z.number(), y: z.number() })),
+  strokeDash: z.boolean().optional(),
+});
+export type ConnectorElement = z.infer<typeof ConnectorElementSchema>;
+
+export const ImageElementSchema = BaseCanvasElementSchemaBase.extend({
+  type: z.literal('image'),
+  src: z.url(),
+  altText: z.string().optional(),
+});
+export type ImageElement = z.infer<typeof ImageElementSchema>;
+
+export const FrameElementSchema = BaseCanvasElementSchemaBase.extend({
+  type: z.literal('frame'),
+  label: z.string().optional(),
+  childElementIds: z.array(UUIDSchema),
+});
+export type FrameElement = z.infer<typeof FrameElementSchema>;
+
+// Replaced z.union with z.discriminatedUnion on the 'type' field.
+// This is significantly faster for validation (no sequential branch-trying)
+// and produces precise error messages pointing to the failing variant.
+//
+// Note: TextElementSchema uses z.enum(['text', 'sticky-note']) for its type,
+// which discriminatedUnion does not support — it requires z.literal per branch.
+// We split it into two separate schemas to satisfy that constraint.
+export const TextOnlyElementSchema = BaseCanvasElementSchemaBase.extend({
+  type: z.literal('text'),
+  content: z.string(),
+});
+export type TextOnlyElement = z.infer<typeof TextOnlyElementSchema>;
+
+export const StickyNoteElementSchema = BaseCanvasElementSchemaBase.extend({
+  type: z.literal('sticky-note'),
+  content: z.string(),
+});
+export type StickyNoteElement = z.infer<typeof StickyNoteElementSchema>;
+
+export const RectangleElementSchema = BaseCanvasElementSchemaBase.extend({ type: z.literal('rectangle') });
+export const EllipseElementSchema   = BaseCanvasElementSchemaBase.extend({ type: z.literal('ellipse') });
+export const DiamondElementSchema   = BaseCanvasElementSchemaBase.extend({ type: z.literal('diamond') });
+export const TriangleElementSchema  = BaseCanvasElementSchemaBase.extend({ type: z.literal('triangle') });
+export const LineElementSchema      = BaseCanvasElementSchemaBase.extend({
+  type: z.literal('line'),
+  startElementId: UUIDSchema.optional(),
+  endElementId: UUIDSchema.optional(),
+  points: z.array(z.object({ x: z.number(), y: z.number() })),
+  strokeDash: z.boolean().optional(),
+});
+export const ArrowElementSchema     = BaseCanvasElementSchemaBase.extend({
+  type: z.literal('arrow'),
+  startElementId: UUIDSchema.optional(),
+  endElementId: UUIDSchema.optional(),
+  points: z.array(z.object({ x: z.number(), y: z.number() })),
+  strokeDash: z.boolean().optional(),
+});
+export const ConnectorOnlyElementSchema = BaseCanvasElementSchemaBase.extend({
+  type: z.literal('connector'),
+  startElementId: UUIDSchema.optional(),
+  endElementId: UUIDSchema.optional(),
+  points: z.array(z.object({ x: z.number(), y: z.number() })),
+  strokeDash: z.boolean().optional(),
+});
+
+export const CanvasElementSchema = z.discriminatedUnion('type', [
+  TextOnlyElementSchema,
+  StickyNoteElementSchema,
+  ServiceCardElementSchema,
+  DatabaseCardElementSchema,
+  RectangleElementSchema,
+  EllipseElementSchema,
+  DiamondElementSchema,
+  TriangleElementSchema,
+  LineElementSchema,
+  ArrowElementSchema,
+  ConnectorOnlyElementSchema,
+  ImageElementSchema,
+  FrameElementSchema,
+]);
+export type CanvasElement = z.infer<typeof CanvasElementSchema>;
+
+export type BaseCanvasElement = z.infer<typeof BaseCanvasElementSchemaBase> & {
   type: CanvasElementType;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation: number;
-  zIndex: number;
-  isLocked: boolean;
-  appearance: CanvasElementAppearance;
-  createdBy: UUID;
-  createdAt: ISODateString;
-  updatedAt: ISODateString;
-}
-
-export interface TextElement extends BaseCanvasElement {
-  type: 'text' | 'sticky-note';
-  content: string;
-}
-
-export interface ServiceCardElement extends BaseCanvasElement {
-  type: 'service-card';
-  badge: string;       // e.g. "SERVICE"
-  title: string;       // e.g. "Auth Gateway"
-  description: string; // e.g. "Handles JWT, OAuth2 flows"
-}
-
-export interface DatabaseCardElement extends BaseCanvasElement {
-  type: 'database-card';
-  badge: string;       // e.g. "DATABASE"
-  title: string;       // e.g. "User Registry"
-  description: string; // e.g. "PostgreSQL Instance v15"
-}
-
-export interface ShapeElement extends BaseCanvasElement {
-  type: 'rectangle' | 'ellipse' | 'diamond' | 'triangle';
-}
-
-export interface ConnectorElement extends BaseCanvasElement {
-  type: 'line' | 'arrow' | 'connector';
-  startElementId?: UUID;
-  endElementId?: UUID;
-  points: Array<{ x: number; y: number }>;
-  /** Dashed connector style visible in the Workspace screenshot */
-  strokeDash?: boolean;
-}
-
-export interface ImageElement extends BaseCanvasElement {
-  type: 'image';
-  src: string;
-  altText?: string;
-}
-
-export interface FrameElement extends BaseCanvasElement {
-  type: 'frame';
-  label?: string;
-  childElementIds: UUID[];
-}
-
-export type CanvasElement =
-  | TextElement
-  | ServiceCardElement
-  | DatabaseCardElement
-  | ShapeElement
-  | ConnectorElement
-  | ImageElement
-  | FrameElement;
+};
 
 /** GET /api/v1/boards/:boardId/canvas/elements */
-export interface GetCanvasElementsResponse {
-  boardId: UUID;
-  elements: CanvasElement[];
-  lastSavedAt: ISODateString;
-}
+export const GetCanvasElementsResponseSchema = z.object({
+  boardId: UUIDSchema,
+  elements: z.array(CanvasElementSchema),
+  lastSavedAt: ISODateStringSchema,
+});
+export type GetCanvasElementsResponse = z.infer<typeof GetCanvasElementsResponseSchema>;
 
 /** PUT /api/v1/boards/:boardId/canvas/snapshot */
-export interface SaveCanvasSnapshotPayload {
-  elements: CanvasElement[];
-}
+export const SaveCanvasSnapshotPayloadSchema = z.object({
+  elements: z.array(CanvasElementSchema),
+});
+export type SaveCanvasSnapshotPayload = z.infer<typeof SaveCanvasSnapshotPayloadSchema>;
 
 // =============================================================================
-// 7. BOARD HISTORY DOMAIN — /api/v1/boards/:boardId/history  [NEW DOMAIN]
+// 8. BOARD HISTORY DOMAIN — /api/v1/boards/:boardId/history
 // Powers the History panel (clock icon in canvas sidebar).
 // Long-term revision browsing and restore. Short-lived in-session undo/redo
 // is handled client-side via a local stack — no REST call per keystroke.
 // =============================================================================
 
-export interface BoardRevision {
-  id: UUID;
-  boardId: UUID;
-  authorId: UUID;
-  authorName: string;
+export const BoardRevisionSchema = z.object({
+  id: UUIDSchema,
+  boardId: UUIDSchema,
+  authorId: UUIDSchema,
+  authorName: z.string().min(1),
   /** Element count at this snapshot — shown in History panel */
-  elementCount: number;
+  elementCount: z.number().int().nonnegative(),
   /** e.g. "Auto-save" or "Restored from revision" */
-  description: string;
-  createdAt: ISODateString;
-}
+  description: z.string(),
+  createdAt: ISODateStringSchema,
+});
+export type BoardRevision = z.infer<typeof BoardRevisionSchema>;
 
-export interface BoardRevisionDetail extends BoardRevision {
-  elements: CanvasElement[];
-}
+export const BoardRevisionDetailSchema = BoardRevisionSchema.extend({
+  elements: z.array(CanvasElementSchema),
+});
+export type BoardRevisionDetail = z.infer<typeof BoardRevisionDetailSchema>;
 
 /** GET /api/v1/boards/:boardId/history — query parameters */
-export interface GetBoardHistoryQuery {
-  limit?: number; // default 50
-}
+export const GetBoardHistoryQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().default(50),
+});
+export type GetBoardHistoryQuery = z.infer<typeof GetBoardHistoryQuerySchema>;
+
+// FIX: Added missing response schema for GET /history (list) and GET /history/:revisionId.
+export const GetBoardHistoryResponseSchema = z.array(BoardRevisionSchema);
+export type GetBoardHistoryResponse = z.infer<typeof GetBoardHistoryResponseSchema>;
+
+export const GetBoardRevisionDetailResponseSchema = BoardRevisionDetailSchema;
+export type GetBoardRevisionDetailResponse = z.infer<typeof GetBoardRevisionDetailResponseSchema>;
 
 /** POST /api/v1/boards/:boardId/history/restore */
-export interface RestoreBoardRevisionPayload {
-  revisionId: UUID;
-}
+export const RestoreBoardRevisionPayloadSchema = z.object({
+  revisionId: UUIDSchema,
+});
+export type RestoreBoardRevisionPayload = z.infer<typeof RestoreBoardRevisionPayloadSchema>;
 
-export interface RestoreBoardRevisionResponse {
-  revision: BoardRevision;
-  elements: CanvasElement[];
-}
+export const RestoreBoardRevisionResponseSchema = z.object({
+  revision: BoardRevisionSchema,
+  elements: z.array(CanvasElementSchema),
+});
+export type RestoreBoardRevisionResponse = z.infer<typeof RestoreBoardRevisionResponseSchema>;
 
 // =============================================================================
-// 8. ACTIVE THREADS / CHAT DOMAIN — /api/v1/boards/:boardId/threads
+// 9. ACTIVE THREADS / CHAT DOMAIN — /api/v1/boards/:boardId/threads
 // =============================================================================
 
-export type ThreadStatus = 'open' | 'resolved';
+export const ThreadStatusSchema = z.enum(['open', 'resolved']);
+export type ThreadStatus = z.infer<typeof ThreadStatusSchema>;
 
-export interface ThreadReply {
-  id: UUID;
-  threadId: UUID;
-  authorId: UUID;
-  authorName: string;
-  authorAvatarUrl: string | null;
-  message: string;
-  createdAt: ISODateString;
-}
+export const ThreadReplySchema = z.object({
+  id: UUIDSchema,
+  threadId: UUIDSchema,
+  authorId: UUIDSchema,
+  authorName: z.string().min(1),
+  authorAvatarUrl: z.url().nullable(),
+  message: z.string().min(1, "Message cannot be empty"),
+  createdAt: ISODateStringSchema,
+});
+export type ThreadReply = z.infer<typeof ThreadReplySchema>;
 
-export interface Thread {
-  id: UUID;
-  boardId: UUID;
+export const ThreadSchema = z.object({
+  id: UUIDSchema,
+  boardId: UUIDSchema,
   /** Canvas element this thread is pinned to (red bubble in Workspace) */
-  targetElementId: UUID;
-  authorId: UUID;
-  authorName: string;
-  authorAvatarUrl: string | null;
-  message: string;
-  status: ThreadStatus;
-  replies: ThreadReply[];
-  createdAt: ISODateString;
-  updatedAt: ISODateString;
-}
+  targetElementId: UUIDSchema,
+  authorId: UUIDSchema,
+  authorName: z.string().min(1),
+  authorAvatarUrl: z.url().nullable(),
+  message: z.string().min(1, "Message cannot be empty"),
+  status: ThreadStatusSchema,
+  replies: z.array(ThreadReplySchema),
+  createdAt: ISODateStringSchema,
+  updatedAt: ISODateStringSchema,
+});
+export type Thread = z.infer<typeof ThreadSchema>;
 
 /** POST /api/v1/boards/:boardId/threads */
-export interface CreateThreadPayload {
-  targetElementId: UUID;
-  message: string;
-}
+export const CreateThreadPayloadSchema = z.object({
+  targetElementId: UUIDSchema,
+  message: z.string().min(1, "Message cannot be empty"),
+});
+export type CreateThreadPayload = z.infer<typeof CreateThreadPayloadSchema>;
 
 /** POST /api/v1/boards/:boardId/threads/:threadId/reply */
-export interface ReplyToThreadPayload {
-  message: string;
-}
+export const ReplyToThreadPayloadSchema = z.object({
+  message: z.string().min(1, "Message cannot be empty"),
+});
+export type ReplyToThreadPayload = z.infer<typeof ReplyToThreadPayloadSchema>;
 
 /** PATCH /api/v1/boards/:boardId/threads/:threadId */
-export interface UpdateThreadPayload {
-  status: 'resolved';
-}
+export const UpdateThreadPayloadSchema = z.object({
+  status: z.literal('resolved'),
+});
+export type UpdateThreadPayload = z.infer<typeof UpdateThreadPayloadSchema>;
 
 // =============================================================================
-// 9. WEBSOCKET EVENTS — Namespace: /workspace
+// 10. NOTIFICATIONS DOMAIN — /api/v1/notifications
 // =============================================================================
 
-export enum WsClientEvent {
-  JOIN_ROOM      = 'join-room',
-  CURSOR_MOVE    = 'cursor-move',
-  ELEMENT_CREATE = 'element-create',
-  ELEMENT_UPDATE = 'element-update',
-  ELEMENT_DELETE = 'element-delete',
-}
+export const NotificationTypeSchema = z.enum(['invite', 'comment', 'mention', 'board-update']);
+export type NotificationType = z.infer<typeof NotificationTypeSchema>;
 
-export enum WsServerEvent {
-  USER_JOINED      = 'user-joined',
-  USER_LEFT        = 'user-left',
-  CURSOR_MOVED     = 'cursor-moved',
-  ELEMENT_CREATED  = 'element-created',
-  ELEMENT_UPDATED  = 'element-updated',
-  ELEMENT_DELETED  = 'element-deleted',
-}
+export const NotificationSchema = z.object({
+  id: UUIDSchema,
+  type: NotificationTypeSchema,
+  message: z.string(),
+  boardId: UUIDSchema.optional(),
+  isRead: z.boolean(),
+  createdAt: ISODateStringSchema,
+});
+export type Notification = z.infer<typeof NotificationSchema>;
 
-export interface JoinRoomPayload    { boardId: UUID; }
-export interface UserJoinedPayload  { user: { userId: UUID; fullName: string; avatarUrl: string | null; }; }
-export interface UserLeftPayload    { userId: UUID; }
+/** GET /api/v1/notifications — query parameters */
+export const GetNotificationsQuerySchema = z.object({
+  isRead: z.coerce.boolean().optional(),
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().optional(),
+});
+export type GetNotificationsQuery = z.infer<typeof GetNotificationsQuerySchema>;
 
-/** Throttled at ~50ms via lodash.throttle before emitting */
-export interface CursorMovePayload  { x: number; y: number; }
-export interface CursorMovedPayload { userId: UUID; userName: string; x: number; y: number; }
+export const GetNotificationsResponseSchema = PaginatedResponseSchema(NotificationSchema);
+export type GetNotificationsResponse = z.infer<typeof GetNotificationsResponseSchema>;
 
-export type CanvasElementChanges = Partial<
-  Omit<CanvasElement, 'id' | 'type' | 'createdBy' | 'createdAt' | 'updatedAt'>
->;
+/** PATCH /api/v1/notifications/:notificationId */
+export const MarkNotificationReadPayloadSchema = z.object({
+  isRead: z.boolean(),
+});
+export type MarkNotificationReadPayload = z.infer<typeof MarkNotificationReadPayloadSchema>;
 
-export interface ElementCreatePayload  { element: CanvasElement; }
-export interface ElementCreatedPayload { element: CanvasElement; }
-export interface ElementUpdatePayload  { id: UUID; changes: CanvasElementChanges; }
-export interface ElementUpdatedPayload { id: UUID; changes: CanvasElementChanges; }
-export interface ElementDeletePayload  { id: UUID; }
-export interface ElementDeletedPayload { id: UUID; }
+export const MarkNotificationReadResponseSchema = NotificationSchema;
+export type MarkNotificationReadResponse = z.infer<typeof MarkNotificationReadResponseSchema>;
 
-/** Typed event maps for socket.io-client */
-export interface ServerToClientEvents {
-  [WsServerEvent.USER_JOINED]:     (payload: UserJoinedPayload)    => void;
-  [WsServerEvent.USER_LEFT]:       (payload: UserLeftPayload)      => void;
-  [WsServerEvent.CURSOR_MOVED]:    (payload: CursorMovedPayload)   => void;
-  [WsServerEvent.ELEMENT_CREATED]: (payload: ElementCreatedPayload) => void;
-  [WsServerEvent.ELEMENT_UPDATED]: (payload: ElementUpdatedPayload) => void;
-  [WsServerEvent.ELEMENT_DELETED]: (payload: ElementDeletedPayload) => void;
-}
+/** POST /api/v1/notifications/mark-all-read */
+export const MarkAllNotificationsReadResponseSchema = z.object({
+  updatedCount: z.number().int().nonnegative(),
+});
+export type MarkAllNotificationsReadResponse = z.infer<typeof MarkAllNotificationsReadResponseSchema>;
 
-export interface ClientToServerEvents {
-  [WsClientEvent.JOIN_ROOM]:      (payload: JoinRoomPayload)      => void;
-  [WsClientEvent.CURSOR_MOVE]:    (payload: CursorMovePayload)    => void;
-  [WsClientEvent.ELEMENT_CREATE]: (payload: ElementCreatePayload) => void;
-  [WsClientEvent.ELEMENT_UPDATE]: (payload: ElementUpdatePayload) => void;
-  [WsClientEvent.ELEMENT_DELETE]: (payload: ElementDeletePayload) => void;
-}
+/** GET /api/v1/notifications/unread-count */
+export const GetUnreadCountResponseSchema = z.object({
+  unreadCount: z.number().int().nonnegative(),
+});
+export type GetUnreadCountResponse = z.infer<typeof GetUnreadCountResponseSchema>;
 
 // =============================================================================
-// 10. DASHBOARD & NAVIGATION UI STATE
+// 11. WEBSOCKET EVENTS — Namespace: /workspace
 // =============================================================================
 
-export interface ForgotPasswordPageState {
-  email: string;
-  isSubmitting: boolean;
-  isSuccess: boolean;
-  error: string | null;
-}
+// FIX: Replaced TypeScript enums with z.enum() for consistency with the rest of
+// the models. The string values are preserved. Use WsClientEvent and
+// WsServerEvent as plain const maps if you need value access at runtime.
 
-export interface ResetPasswordPageState {
-  newPassword: string;
-  confirmPassword: string;
-  isSubmitting: boolean;
-  isSuccess: boolean;
-  error: string | null;
-}
+export const WsClientEventSchema = z.enum([
+  'join-room',
+  'cursor-move',
+  'element-create',
+  'element-update',
+  'element-delete',
+]);
+export type WsClientEvent = z.infer<typeof WsClientEventSchema>;
+export const WsClientEvent = WsClientEventSchema.enum;
 
-export type DashboardViewMode = 'grid' | 'list';
+export const WsServerEventSchema = z.enum([
+  'user-joined',
+  'user-left',
+  'cursor-moved',
+  'element-created',
+  'element-updated',
+  'element-deleted',
+]);
+export type WsServerEvent = z.infer<typeof WsServerEventSchema>;
+export const WsServerEvent = WsServerEventSchema.enum;
 
-export type NavTab = 'Recent' | 'Templates' | 'Shared';
+export const JoinRoomPayloadSchema = z.object({
+  boardId: UUIDSchema,
+});
+export type JoinRoomPayload = z.infer<typeof JoinRoomPayloadSchema>;
 
-export interface Notification {
-  id: UUID;
-  type: 'invite' | 'comment' | 'mention' | 'board-update';
-  message: string;
-  boardId?: UUID;
-  isRead: boolean;
-  createdAt: ISODateString;
-}
+export const UserJoinedPayloadSchema = z.object({
+  user: z.object({
+    userId: UUIDSchema,
+    fullName: z.string(),
+    avatarUrl: z.url().nullable(),
+  }),
+});
+export type UserJoinedPayload = z.infer<typeof UserJoinedPayloadSchema>;
+
+export const UserLeftPayloadSchema = z.object({
+  userId: UUIDSchema,
+});
+export type UserLeftPayload = z.infer<typeof UserLeftPayloadSchema>;
+
+export const CursorMovePayloadSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+});
+export type CursorMovePayload = z.infer<typeof CursorMovePayloadSchema>;
+
+export const CursorMovedPayloadSchema = z.object({
+  userId: UUIDSchema,
+  userName: z.string(),
+  x: z.number(),
+  y: z.number(),
+});
+export type CursorMovedPayload = z.infer<typeof CursorMovedPayloadSchema>;
+
+/**
+ * Zod equivalent for Partial<Omit<CanvasElement, 'id' | 'type' | 'createdBy' | 'createdAt' | 'updatedAt'>>
+ * Combines all mutable properties across all element types.
+ */
+export const CanvasElementChangesSchema = z.object({
+  // Base properties
+  x: z.number().optional(),
+  y: z.number().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  rotation: z.number().optional(),
+  zIndex: z.number().int().optional(),
+  isLocked: z.boolean().optional(),
+  appearance: CanvasElementAppearanceSchema.optional(),
+  
+  // Type-specific properties
+  content: z.string().optional(),
+  badge: z.string().optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  startElementId: UUIDSchema.optional(),
+  endElementId: UUIDSchema.optional(),
+  points: z.array(z.object({ x: z.number(), y: z.number() })).optional(),
+  strokeDash: z.boolean().optional(),
+  src: z.url().optional(),
+  altText: z.string().optional(),
+  label: z.string().optional(),
+  childElementIds: z.array(UUIDSchema).optional(),
+}).strict(); // Ensures clients can't inject random fields
+
+export type CanvasElementChanges = z.infer<typeof CanvasElementChangesSchema>;
+
+export const ElementCreatePayloadSchema = z.object({ element: CanvasElementSchema });
+export type ElementCreatePayload = z.infer<typeof ElementCreatePayloadSchema>;
+
+export const ElementCreatedPayloadSchema = z.object({ element: CanvasElementSchema });
+export type ElementCreatedPayload = z.infer<typeof ElementCreatedPayloadSchema>;
+
+export const ElementUpdatePayloadSchema = z.object({
+  id: UUIDSchema,
+  changes: CanvasElementChangesSchema,
+});
+export type ElementUpdatePayload = z.infer<typeof ElementUpdatePayloadSchema>;
+
+export const ElementUpdatedPayloadSchema = z.object({
+  id: UUIDSchema,
+  changes: CanvasElementChangesSchema,
+});
+export type ElementUpdatedPayload = z.infer<typeof ElementUpdatedPayloadSchema>;
+
+export const ElementDeletePayloadSchema = z.object({ id: UUIDSchema });
+export type ElementDeletePayload = z.infer<typeof ElementDeletePayloadSchema>;
+
+export const ElementDeletedPayloadSchema = z.object({ id: UUIDSchema });
+export type ElementDeletedPayload = z.infer<typeof ElementDeletedPayloadSchema>;
 
 // =============================================================================
-// 11. CANVAS WORKSPACE UI STATE
+// 12. DASHBOARD & NAVIGATION UI STATE
 // =============================================================================
 
-export type CanvasTool =
-  | 'select'
-  | 'pen'
-  | 'shapes'
-  | 'sticky-note'
-  | 'text'
-  | 'connector'
-  | 'history'
-  | 'settings';
+export const ForgotPasswordPageStateSchema = z.object({
+  email: z.email(),
+  isSubmitting: z.boolean(),
+  isSuccess: z.boolean(),
+  error: z.string().nullable(),
+});
+export type ForgotPasswordPageState = z.infer<typeof ForgotPasswordPageStateSchema>;
 
-export type CanvasZoomLevel = number; // e.g. 85 = 85%
+export const ResetPasswordPageStateSchema = z.object({
+  newPassword: z.string().min(8),
+  confirmPassword: z.string().min(8),
+  isSubmitting: z.boolean(),
+  isSuccess: z.boolean(),
+  error: z.string().nullable(),
+});
+export type ResetPasswordPageState = z.infer<typeof ResetPasswordPageStateSchema>;
+
+export const DashboardViewModeSchema = z.enum(['grid', 'list']);
+export type DashboardViewMode = z.infer<typeof DashboardViewModeSchema>;
+
+export const NavTabSchema = z.enum(['Recent', 'Templates', 'Shared']);
+export type NavTab = z.infer<typeof NavTabSchema>;
+
+// =============================================================================
+// 13. CANVAS WORKSPACE UI STATE
+// =============================================================================
+
+export const CanvasToolSchema = z.enum([
+  'select', 'pen', 'shapes', 'sticky-note', 'text', 'connector', 'history', 'settings'
+]);
+export type CanvasTool = z.infer<typeof CanvasToolSchema>;
+
+export const CanvasZoomLevelSchema = z.number().positive(); // e.g. 85 = 85%
+export type CanvasZoomLevel = z.infer<typeof CanvasZoomLevelSchema>;
 
 /** Right-hand Properties panel state */
-export interface PropertiesPanelState {
-  activeTab: 'PROPERTIES' | 'CHAT';
-  selectedElementId: UUID | null;
-  appearance: CanvasElementAppearance;
-}
+export const PropertiesPanelStateSchema = z.object({
+  activeTab: z.enum(['PROPERTIES', 'CHAT']),
+  selectedElementId: UUIDSchema.nullable(),
+  appearance: CanvasElementAppearanceSchema,
+});
+export type PropertiesPanelState = z.infer<typeof PropertiesPanelStateSchema>;
 
 /** Floating cursor label rendered per collaborator on the canvas */
-export interface ActiveCursor {
-  userId: UUID;
-  userName: string;
-  avatarUrl: string | null;
-  x: number;
-  y: number;
+export const ActiveCursorSchema = z.object({
+  userId: UUIDSchema,
+  userName: z.string(),
+  avatarUrl: z.url().nullable(),
+  x: z.number(),
+  y: z.number(),
   /** Accent color for the cursor name badge */
-  color: string;
-}
+  color: z.string().regex(
+    /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 
+    "Invalid hex color code. Must be a 3 or 6 character hex color starting with '#'."
+  ),
+});
+export type ActiveCursor = z.infer<typeof ActiveCursorSchema>;
 
 /** Mini-map overlay (bottom-right corner of the Workspace) */
-export interface MinimapState {
-  viewportX: number;
-  viewportY: number;
-  viewportWidth: number;
-  viewportHeight: number;
-  canvasWidth: number;
-  canvasHeight: number;
-}
+export const MinimapStateSchema = z.object({
+  viewportX: z.number(),
+  viewportY: z.number(),
+  viewportWidth: z.number().nonnegative(),
+  viewportHeight: z.number().nonnegative(),
+  canvasWidth: z.number().nonnegative(),
+  canvasHeight: z.number().nonnegative(),
+});
+export type MinimapState = z.infer<typeof MinimapStateSchema>;
 
 /**
  * In-session undo/redo stack state (client-side only).
- * Short-lived Ctrl+Z / Ctrl+Y — not persisted to REST History API.
- * Maps to the undo/redo arrows visible in the canvas toolbar header.
  */
-export interface UndoRedoState {
-  canUndo: boolean;
-  canRedo: boolean;
-  stackIndex: number;
-  stackSize: number;
-}
+export const UndoRedoStateSchema = z.object({
+  canUndo: z.boolean(),
+  canRedo: z.boolean(),
+  stackIndex: z.number().int().nonnegative(),
+  stackSize: z.number().int().nonnegative(),
+});
+export type UndoRedoState = z.infer<typeof UndoRedoStateSchema>;
