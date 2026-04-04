@@ -6,31 +6,119 @@ datasource db {
   provider = "postgresql"
 }
 
+// -----------------------------------------------------------------------------
+// 2 & 3. AUTH & USER DOMAIN — /api/v1/auth & /api/v1/users
+// -----------------------------------------------------------------------------
 model User {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  fullName       String
+  password       String
+  avatarUrl      String?
+  
+  preferences    Json           @default("{\"emailNotifications\": true, \"cursorVisibility\": true}")
+  
+  refreshToken   String?
+  
+  boards         Board[]        @relation("BoardOwner")
+  
+  collaborations Collaborator[]
+  
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 4. BOARD MANAGEMENT DOMAIN — /api/v1/boards
+// -----------------------------------------------------------------------------
+model Board {
+  id               String         @id @default(uuid())
+  title            String
+  thumbnailUrl     String?
+  
+  type             String         @default("personal") // 'personal' | 'shared'
+  status           String         @default("active")   // 'active' | 'archived'
+  badge            String?                             // 'ACTIVE PROJECT' | 'REVIEW REQUIRED' | ...
+  visibilityIcon   String         @default("private")  // 'private' | 'shared' | 'public'
+  
+  ownerId          String
+  owner            User           @relation("BoardOwner", fields: [ownerId], references: [id])
+  
+  templateId       String?        // UUID của template nếu board tạo từ template
+  
+  elements         Element[]
+  
+
+  collaborators    Collaborator[]
+  
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+// -----------------------------------------------------------------------------
+// 5. TEMPLATES DOMAIN — /api/v1/templates
+// -----------------------------------------------------------------------------
+model Template {
   id           String   @id @default(uuid())
-  username     String   @unique
-  email        String   @unique
-  password     String
-  refreshToken String?
-  boards       Board[]
+  title        String
+  description  String
+  thumbnailUrl String?
+  
+  category     String   
+  
+  // Lưu cấu trúc các Element mẫu dưới dạng Json
+
+  elements     Json     @default("[]")
+  
   createdAt    DateTime @default(now())
 }
+// -----------------------------------------------------------------------------
+// 6. CANVAS STATE REST API — /api/v1/boards/:boardId/canvas
+// Gom tất cả các loại CanvasElement (Text, Shape, ServiceCard...) vào 1 bảng
+// -----------------------------------------------------------------------------
+model Element {
+  id          String   @id @default(uuid())
+  
+  // Khớp với CanvasElementType (rectangle, text, sticky-note, service-card...)
+  type        String   
+  
+  // BaseCanvasElement properties
+  x           Float
+  y           Float
+  width       Float
+  height      Float
+  rotation    Float    @default(0)
+  zIndex      Int      @default(0)
+  isLocked    Boolean  @default(false)
+  
 
-model Board {
-  id          String    @id @default(uuid())
-  title       String
-  ownerId     String
-  owner       User      @relation(fields: [ownerId], references: [id])
-  elements    Element[]
-  createdAt   DateTime  @default(now())
+  appearance  Json     
+  
+
+  extraData   Json?    
+
+  boardId     String
+  board       Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  
+  createdBy   String   // ID của User (UUID)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
-model Element {
-  id      String @id @default(uuid())
-  type    String
-  x       Float
-  y       Float
-  props   Json   // Lưu màu sắc, kích thước dạng JSON cho linh hoạt
-  boardId String
-  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+// -----------------------------------------------------------------------------
+// 7. COLLABORATION & SHARING DOMAIN — /api/v1/boards/:boardId/collaborators
+// -----------------------------------------------------------------------------
+model Collaborator {
+  id        String   @id @default(uuid())
+  userId    String
+  boardId   String
+  
+
+  role      String   @default("viewer") 
+  
+  user      User     @relation(fields: [userId], references: [id])
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  
+  joinedAt  DateTime @default(now())
+
+  @@unique([userId, boardId])
 }
