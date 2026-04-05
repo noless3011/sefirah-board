@@ -144,7 +144,7 @@ Corresponds to the **History Panel** (clock icon in the canvas sidebar) for long
 {
   "id": "uuid",
   "boardId": "uuid",
-  "authorId": "uuid",
+  "authorId": "uuid | null",
   "authorName": "Klein",
   "elementCount": 42,
   "description": "Auto-save",
@@ -197,7 +197,7 @@ Notifications are generated server-side by the following triggers:
   "id": "uuid",
   "type": "invite | comment | mention | board-update",
   "message": "Sarah Jenkins invited you to collaborate on \"YOLO/VAE Architecture\".",
-  "boardId": "uuid | undefined",
+  "boardId": "uuid | null",
   "isRead": false,
   "createdAt": "ISO"
 }
