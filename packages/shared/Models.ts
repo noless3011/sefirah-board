@@ -451,7 +451,7 @@ const BaseCanvasElementSchemaBase = z.object({
   zIndex: z.number().int(),
   isLocked: z.boolean(),
   appearance: CanvasElementAppearanceSchema,
-  createdBy: UUIDSchema,
+  createdBy: UUIDSchema.nullable(),
   createdAt: ISODateStringSchema,
   updatedAt: ISODateStringSchema,
 });
@@ -596,7 +596,7 @@ export type SaveCanvasSnapshotPayload = z.infer<typeof SaveCanvasSnapshotPayload
 export const BoardRevisionSchema = z.object({
   id: UUIDSchema,
   boardId: UUIDSchema,
-  authorId: UUIDSchema,
+  authorId: UUIDSchema.nullable(),
   authorName: z.string().min(1),
   /** Element count at this snapshot — shown in History panel */
   elementCount: z.number().int().nonnegative(),
@@ -646,7 +646,7 @@ export type ThreadStatus = z.infer<typeof ThreadStatusSchema>;
 export const ThreadReplySchema = z.object({
   id: UUIDSchema,
   threadId: UUIDSchema,
-  authorId: UUIDSchema,
+  authorId: UUIDSchema.nullable(),
   authorName: z.string().min(1),
   authorAvatarUrl: z.url().nullable(),
   message: z.string().min(1, "Message cannot be empty"),
@@ -658,8 +658,8 @@ export const ThreadSchema = z.object({
   id: UUIDSchema,
   boardId: UUIDSchema,
   /** Canvas element this thread is pinned to (red bubble in Workspace) */
-  targetElementId: UUIDSchema,
-  authorId: UUIDSchema,
+  targetElementId: UUIDSchema.nullable(),
+  authorId: UUIDSchema.nullable(),
   authorName: z.string().min(1),
   authorAvatarUrl: z.url().nullable(),
   message: z.string().min(1, "Message cannot be empty"),
@@ -700,7 +700,7 @@ export const NotificationSchema = z.object({
   id: UUIDSchema,
   type: NotificationTypeSchema,
   message: z.string(),
-  boardId: UUIDSchema.optional(),
+  boardId: UUIDSchema.nullable(),
   isRead: z.boolean(),
   createdAt: ISODateStringSchema,
 });
@@ -737,6 +737,12 @@ export const GetUnreadCountResponseSchema = z.object({
   unreadCount: z.number().int().nonnegative(),
 });
 export type GetUnreadCountResponse = z.infer<typeof GetUnreadCountResponseSchema>;
+
+/** DELETE /api/v1/notifications/:notificationId */
+export const DeleteNotificationResponseSchema = z.object({
+  message: z.string().optional(),
+});
+export type DeleteNotificationResponse = z.infer<typeof DeleteNotificationResponseSchema>;
 
 // =============================================================================
 // 11. WEBSOCKET EVENTS — Namespace: /workspace
