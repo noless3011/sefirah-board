@@ -23,8 +23,11 @@ This project uses npm workspaces to manage multiple packages:
 
 - Node.js (LTS recommended)
 - npm (version 7+ to support workspaces)
+- PostgreSQL database
 
-## Setup & Installation
+## Setup Guide
+
+### 1. Install dependencies
 
 From the root of the repository, you can install the dependencies for all applications and packages at once:
 
@@ -32,44 +35,76 @@ From the root of the repository, you can install the dependencies for all applic
 npm install
 ```
 
-## Running Locally
+### 2. Configure backend environment
 
-Because this is a monorepo, you can run the applications from their respective directories. You will typically need two terminal sessions.
+Create a local backend env file from the example:
+
+```powershell
+Copy-Item apps/backend/.env.example apps/backend/.env
+```
+
+Then update `apps/backend/.env` with real values:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `JWT_REFRESH_SECRET`
+- `CORS_ORIGIN` and `CLIENT_URL` (for Vite dev server use `http://localhost:5173`)
+- OAuth credentials (`GOOGLE_CLIENT_ID`, `GOOGLE_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`) if using social login. Could be ignore if we are not trying to setup oauth
+
+### 3. Configure frontend environment
+
+Create `apps/frontend/.env` with:
+
+```env
+VITE_API_URL=http://localhost:4000/api/v1
+VITE_WS_URL=http://localhost:4000/workspace
+```
+
+### 4. Run database migrations
+
+```bash
+cd apps/backend
+npx prisma migrate deploy
+```
+
+For local schema changes, use:
+
+```bash
+npx prisma migrate dev
+```
+
+### 5. Run locally
+
+Start both apps in separate terminals from the repository root.
 
 **Terminal 1: Start the Backend**
 
 ```bash
-cd apps/backend
-npx ts-node index.js # Or configure a 'dev'/'start' script in your package.json
+npm run dev --workspace backend
 ```
 
 **Terminal 2: Start the Frontend**
 
 ```bash
-cd apps/frontend
-npm run dev
+npm run dev --workspace frontend
 ```
 
 The frontend will start a local dev server (usually at `http://localhost:5173`).
+Backend API base URL is usually `http://localhost:4000/api/v1`.
 
 ## Building for Production
 
-To build the project for production:
+To build the project for production from repository root:
 
 ```bash
-# Build Frontend
-cd apps/frontend
-npm run build
-
-# Build Backend
-cd apps/backend
-# Ensure a build script (e.g., tsc) is configured in your package.json
-npm run build
+npm run build --workspace frontend
+npm run build --workspace backend
 ```
 
 ## Documentation & Models
 
 - [API Documentation (`API.md`)](./API.md) — Exhaustive REST API endpoints and WebSocket event specifications.
+- [OAuth Setup Guide (`OAUTH_SETUP.md`)](./OAUTH_SETUP.md) — Environment variables, provider console setup (Google/GitHub), backend OAuth flows, and verification steps.
 - [Shared Models (`packages/shared/Models.ts`)](./packages/shared/Models.ts) — Source-of-truth TypeScript definitions for the entire application, including the canvas, boards, users, and real-time events.
 - [Contribution Guidelines (`COMMIT.md`)](./COMMIT.md) — Workflow instructions, branch naming conventions, and the pull-request process.
 
