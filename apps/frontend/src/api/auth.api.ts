@@ -1,11 +1,13 @@
 import axiosClient from './axiosClient';
 import type {
-    LoginRequest,
-    RegisterRequest,
+    LoginPayload as LoginRequest,
+    RegisterPayload as RegisterRequest,
     AuthResponse,
-    ForgotPasswordRequest,
-    ResetPasswordRequest
-} from '../types/auth.types';
+    RefreshTokenPayload as RefreshTokenRequest,
+    RefreshTokenResponse,
+    ForgotPasswordPayload as ForgotPasswordRequest,
+    ResetPasswordPayload as ResetPasswordRequest
+} from '@sefirah/shared';
 
 const AUTH_URL = '/api/v1/auth';
 
@@ -26,12 +28,15 @@ export const authApi = {
         return axiosClient.post<{ message: string }>(`${AUTH_URL}/reset-password`, data);
     },
 
-    // OAuth endpoints
     loginWithGoogle: (token: string) => {
         return axiosClient.post<AuthResponse>(`${AUTH_URL}/oauth/google`, { token });
     },
 
     loginWithGithub: (code: string) => {
         return axiosClient.post<AuthResponse>(`${AUTH_URL}/oauth/github`, { code });
-    }
+    },
+
+    refreshToken: (data: RefreshTokenRequest) => {
+        return axiosClient.post<RefreshTokenResponse>(`${AUTH_URL}/refresh-token`, data);
+    },
 };
