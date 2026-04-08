@@ -1,5 +1,4 @@
-// Thêm từ khóa 'type' trước ReactNode
-import React, { createContext, useContext, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { socket, connectWorkspace, disconnectWorkspace } from './socketClient';
 import { setupGlobalEvents } from './socketHandlers';
 
