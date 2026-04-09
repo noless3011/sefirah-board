@@ -48,17 +48,20 @@ Then update `apps/backend/.env` with real values:
 - `DATABASE_URL`
 - `JWT_SECRET`
 - `JWT_REFRESH_SECRET`
-- `CORS_ORIGIN` and `CLIENT_URL` (for Vite dev server use `http://localhost:5173`)
+- `CORS_ORIGIN` and `CLIENT_URL` (for single-port mode use `http://localhost:4000`)
+- `ENABLE_FE_PROXY=true` and `FRONTEND_DEV_URL=http://localhost:5173` (to proxy frontend dev server through backend)
 - OAuth credentials (`GOOGLE_CLIENT_ID`, `GOOGLE_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`) if using social login. Could be ignore if we are not trying to setup oauth
 
 ### 3. Configure frontend environment
 
-Create `apps/frontend/.env` with:
+Create `apps/frontend/.env` only if you need to override defaults:
 
 ```env
-VITE_API_URL=http://localhost:4000/api/v1
-VITE_WS_URL=http://localhost:4000/workspace
+VITE_API_URL=/api/v1
+VITE_WS_URL=/workspace
 ```
+
+If these values are omitted, frontend defaults to same-origin (`/api/v1` and `/workspace`).
 
 ### 4. Run database migrations
 
@@ -75,30 +78,37 @@ npx prisma migrate dev
 
 ### 5. Run locally
 
-Start both apps in separate terminals from the repository root.
+Start both apps from the repository root:
 
-**Terminal 1: Start the Backend**
+```bash
+npm run dev
+```
+
+- Public entrypoint: `http://localhost:4000`
+- Backend serves API at `http://localhost:4000/api/v1`
+- Backend reverse-proxies all non-API traffic to Vite (`http://localhost:5173`) when `ENABLE_FE_PROXY=true`
+- Socket.io namespace is available at `/workspace` on the same origin
+- Vite dev server is pinned to port `5173` for stable proxy routing
+
+You can still run each app separately with:
 
 ```bash
 npm run dev --workspace backend
-```
-
-**Terminal 2: Start the Frontend**
-
-```bash
 npm run dev --workspace frontend
 ```
-
-The frontend will start a local dev server (usually at `http://localhost:5173`).
-Backend API base URL is usually `http://localhost:4000/api/v1`.
 
 ## Building for Production
 
 To build the project for production from repository root:
 
 ```bash
-npm run build --workspace frontend
-npm run build --workspace backend
+npm run build
+```
+
+To run production backend (serves API and static frontend build on the same port):
+
+```bash
+npm run start
 ```
 
 ## Documentation & Models

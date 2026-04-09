@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 
-const WS_URL = import.meta.env.VITE_WS_URL;
+const WS_URL = import.meta.env.VITE_WS_URL ?? '/workspace';
 
 export const socket: Socket = io(WS_URL, {
   autoConnect: false, // Quan trọng: Chỉ kết nối khi ta gọi hàm
