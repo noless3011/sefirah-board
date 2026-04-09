@@ -9,7 +9,7 @@ import type {
     ResetPasswordPayload as ResetPasswordRequest
 } from '@sefirah/shared';
 
-const AUTH_URL = '/api/v1/auth';
+const AUTH_URL = '/auth';
 
 export const authApi = {
     login: (data: LoginRequest) => {

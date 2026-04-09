@@ -1,15 +1,23 @@
 import { Router } from 'express';
-import { googleOAuth, githubOAuth } from '../controllers/authController.js';
+import {
+	register,
+	login,
+	googleOAuth,
+	githubOAuth,
+	refreshToken,
+	forgotPassword,
+	resetPassword,
+} from '../controllers/authController.js';
 
 const router = Router();
 
 // Domain: Authentication
-router.post('/register', (req, res) => { res.send('Not implemented'); });
-router.post('/login', (req, res) => { res.send('Not implemented'); });
+router.post('/register', register);
+router.post('/login', login);
 router.post('/oauth/google', googleOAuth);
 router.post('/oauth/github', githubOAuth);
-router.post('/refresh-token', (req, res) => { res.send('Not implemented'); });
-router.post('/forgot-password', (req, res) => { res.send('Not implemented'); });
-router.post('/reset-password', (req, res) => { res.send('Not implemented'); });
+router.post('/refresh-token', refreshToken);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 export default router;
