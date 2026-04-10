@@ -1,13 +1,20 @@
 import { Router } from 'express';
+import {
+	getMe,
+	updateMyProfile,
+	updateMyPassword,
+	updateMyPreferences,
+	deactivateMyAccount,
+} from '../controllers/userController.js';
 
 const router = Router();
 
 // Domain: User & Account Settings
-// All these routes would require authentication middleware later
-router.get('/me', (req, res) => { res.send('Not implemented'); });
-router.patch('/me/profile', (req, res) => { res.send('Not implemented'); });
-router.put('/me/password', (req, res) => { res.send('Not implemented'); });
-router.patch('/me/preferences', (req, res) => { res.send('Not implemented'); });
-router.delete('/me', (req, res) => { res.send('Not implemented'); });
+// Access token validation is handled in controller for now.
+router.get('/me', getMe);
+router.patch('/me/profile', updateMyProfile);
+router.put('/me/password', updateMyPassword);
+router.patch('/me/preferences', updateMyPreferences);
+router.delete('/me', deactivateMyAccount);
 
 export default router;
