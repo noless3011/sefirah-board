@@ -6,9 +6,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import swaggerUi from 'swagger-ui-express';
 import apiRouter from './routes/index.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 import setupWorkspaceSockets from './sockets/workspace.js';
+import { openApiDocument } from './swagger/openapi.js';
 
 const requiredEnvVars = ['JWT_SECRET', 'CORS_ORIGIN'];
 const NODE_ENV = process.env.NODE_ENV ?? 'development';
@@ -44,6 +46,11 @@ app.use(cors({
   credentials: true 
 }));
 app.use(express.json());
+
+app.get('/api/docs.json', (_req, res) => {
+  res.status(200).json(openApiDocument);
+});
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
 // API Version 1
 app.use('/api/v1', apiRouter);
