@@ -23,7 +23,7 @@ export default function AccountSettingsPage() {
     email: "",
     avatarUrl: null, // Sẽ hiện ảnh mặc định nếu null
   });
-  const [security, setSecurity] = useState<SecurityData>({
+  const [security] = useState<SecurityData>({
     currentPassword: "········", // Chỉ hiển thị dạng dot
     newPassword: "",
     confirmPassword: "",
