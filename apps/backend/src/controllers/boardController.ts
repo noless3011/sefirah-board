@@ -3,7 +3,6 @@ import jwt, { type JwtPayload } from 'jsonwebtoken';
 import type { ZodType } from 'zod';
 import {
   BoardSchema,
-  BoardBadgeSchema,
   GetBoardsQuerySchema,
   GetBoardsResponseSchema,
   CreateBoardPayloadSchema,
@@ -96,6 +95,14 @@ const getAuthenticatedUserId = (req: Request): string => {
   return userId;
 };
 
+const getParam = (req: Request, name: string): string => {
+  const val = req.params[name];
+  if (typeof val !== 'string' || !val) {
+    throw new AppError(`Missing or invalid parameter: ${name}`, 400);
+  }
+  return val;
+};
+
 /**
  * Maps Prisma generated enum keys to the kebab-case strings expected by the shared models.
  */
@@ -137,7 +144,7 @@ export const listBoards = async (req: Request, res: Response, next: NextFunction
       where.title = { contains: search, mode: 'insensitive' };
     }
 
-    const [total, boards] = await Promise.all([
+    const [total, boardsRaw] = await Promise.all([
       db.board.count({ where }),
       db.board.findMany({
         where,
@@ -158,6 +165,8 @@ export const listBoards = async (req: Request, res: Response, next: NextFunction
       })
     ]);
 
+    const boards = boardsRaw as any[];
+
     const data = boards.map(board => {
       const isOwner = board.ownerId === userId;
       return BoardSchema.parse({
@@ -175,7 +184,7 @@ export const listBoards = async (req: Request, res: Response, next: NextFunction
           fullName: board.sharedBy.fullName,
           avatarUrl: board.sharedBy.avatarUrl
         } : null,
-        collaborators: board.collaborators.map(c => ({
+        collaborators: board.collaborators.map((c: any) => ({
           userId: c.user.id,
           fullName: c.user.fullName,
           avatarUrl: c.user.avatarUrl
@@ -208,14 +217,11 @@ export const createBoard = async (req: Request, res: Response, next: NextFunctio
     const userId = getAuthenticatedUserId(req);
     const { title, templateId } = parseBody(CreateBoardPayloadSchema, req.body);
 
-    // If templateId is provided, we should ideally copy elements from the template.
-    // For now, let's just create the board.
     const board = await db.board.create({
       data: {
         title,
         ownerId: userId,
         templateId: templateId || null,
-        // Default values from schema: personal, active, private
       },
       include: {
         owner: true,
@@ -226,7 +232,7 @@ export const createBoard = async (req: Request, res: Response, next: NextFunctio
           select: { collaborators: true }
         }
       }
-    });
+    }) as any;
 
     res.status(201).json(BoardSchema.parse({
       id: board.id,
@@ -255,9 +261,9 @@ export const createBoard = async (req: Request, res: Response, next: NextFunctio
 export const getBoard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = getAuthenticatedUserId(req);
-    const { boardId } = req.params;
+    const boardId = getParam(req, 'boardId');
 
-    const board = await db.board.findUnique({
+    const boardRaw = await db.board.findUnique({
       where: { id: boardId },
       include: {
         owner: true,
@@ -272,9 +278,11 @@ export const getBoard = async (req: Request, res: Response, next: NextFunction) 
       }
     });
 
-    if (!board) {
+    if (!boardRaw) {
       throw new AppError('Board not found', 404);
     }
+
+    const board = boardRaw as any;
 
     // Check if user has access (owner or collaborator)
     const isOwner = board.ownerId === userId;
@@ -301,7 +309,7 @@ export const getBoard = async (req: Request, res: Response, next: NextFunction) 
         fullName: board.sharedBy.fullName,
         avatarUrl: board.sharedBy.avatarUrl
       } : null,
-      collaborators: board.collaborators.map(c => ({
+      collaborators: board.collaborators.map((c: any) => ({
         userId: c.user.id,
         fullName: c.user.fullName,
         avatarUrl: c.user.avatarUrl
@@ -321,20 +329,18 @@ export const getBoard = async (req: Request, res: Response, next: NextFunction) 
 export const updateBoard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = getAuthenticatedUserId(req);
-    const { boardId } = req.params;
+    const boardId = getParam(req, 'boardId');
     const payload = parseBody(UpdateBoardPayloadSchema, req.body);
 
-    const board = await db.board.findUnique({
+    const boardBase = await db.board.findUnique({
       where: { id: boardId }
     });
 
-    if (!board) {
+    if (!boardBase) {
       throw new AppError('Board not found', 404);
     }
 
-    if (board.ownerId !== userId) {
-      // Only owner can update metadata for now?
-      // Or maybe editors too? API.md doesn't specify. Usually owner.
+    if (boardBase.ownerId !== userId) {
       throw new AppError('Forbidden', 403);
     }
 
@@ -342,7 +348,6 @@ export const updateBoard = async (req: Request, res: Response, next: NextFunctio
     if (payload.title !== undefined) updateData.title = payload.title;
     if (payload.isArchived !== undefined) updateData.status = payload.isArchived ? 'archived' : 'active';
     if (payload.badge !== undefined) {
-      // Map 'active-project' back to 'active_project' if needed
       updateData.badge = payload.badge ? payload.badge.replace('-', '_') : null;
     }
     if (payload.visibilityIcon !== undefined) updateData.visibilityIcon = payload.visibilityIcon;
@@ -361,7 +366,7 @@ export const updateBoard = async (req: Request, res: Response, next: NextFunctio
           select: { collaborators: true }
         }
       }
-    });
+    }) as any;
 
     res.status(200).json(BoardSchema.parse({
       id: updatedBoard.id,
@@ -378,7 +383,7 @@ export const updateBoard = async (req: Request, res: Response, next: NextFunctio
         fullName: updatedBoard.sharedBy.fullName,
         avatarUrl: updatedBoard.sharedBy.avatarUrl
       } : null,
-      collaborators: updatedBoard.collaborators.map(c => ({
+      collaborators: updatedBoard.collaborators.map((c: any) => ({
         userId: c.user.id,
         fullName: c.user.fullName,
         avatarUrl: c.user.avatarUrl
@@ -398,7 +403,7 @@ export const updateBoard = async (req: Request, res: Response, next: NextFunctio
 export const deleteBoard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = getAuthenticatedUserId(req);
-    const { boardId } = req.params;
+    const boardId = getParam(req, 'boardId');
 
     const board = await db.board.findUnique({
       where: { id: boardId }
@@ -428,22 +433,17 @@ export const deleteBoard = async (req: Request, res: Response, next: NextFunctio
 export const uploadThumbnail = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = getAuthenticatedUserId(req);
-    const { boardId } = req.params;
+    const boardId = getParam(req, 'boardId');
 
-    // Verify access
     const board = await db.board.findUnique({ where: { id: boardId } });
     if (!board) throw new AppError('Board not found', 404);
     
-    // Check if user is owner or collaborator with edit access
-    // For simplicity, let's just check if they are owner or collaborator
     const isOwner = board.ownerId === userId;
     const isCollaborator = await db.collaborator.findFirst({
       where: { boardId, userId }
     });
     if (!isOwner && !isCollaborator) throw new AppError('Forbidden', 403);
 
-    // In a real app, we would process req.file (multipart)
-    // For now, let's assume it's uploaded and we have a URL
     const thumbnailUrl = `https://placehold.co/600x400?text=${encodeURIComponent(board.title)}`;
 
     await db.board.update({
@@ -463,10 +463,9 @@ export const uploadThumbnail = async (req: Request, res: Response, next: NextFun
 export const exportBoard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = getAuthenticatedUserId(req);
-    const { boardId } = req.params;
+    const boardId = getParam(req, 'boardId');
     const { format } = parseBody(ExportBoardPayloadSchema, req.body);
 
-    // Verify access
     const board = await db.board.findUnique({ where: { id: boardId } });
     if (!board) throw new AppError('Board not found', 404);
     
@@ -476,8 +475,7 @@ export const exportBoard = async (req: Request, res: Response, next: NextFunctio
     });
     if (!isOwner && !isCollaborator) throw new AppError('Forbidden', 403);
 
-    // Create an export job in the DB
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const downloadUrl = `https://example.com/exports/${boardId}.${format}`;
 
     await db.exportJob.create({
@@ -485,7 +483,7 @@ export const exportBoard = async (req: Request, res: Response, next: NextFunctio
         boardId,
         requestedById: userId,
         format,
-        status: 'completed', // For now, let's say it's instant
+        status: 'completed',
         downloadUrl,
         expiresAt
       }
@@ -499,3 +497,4 @@ export const exportBoard = async (req: Request, res: Response, next: NextFunctio
     next(error);
   }
 };
+
