@@ -12,13 +12,15 @@ import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 import setupWorkspaceSockets from './sockets/workspace.js';
 import { openApiDocument } from './swagger/openapi.js';
 
+import { logger } from './utils/logger.js';
+
 const requiredEnvVars = ['JWT_SECRET', 'CORS_ORIGIN'];
 const NODE_ENV = process.env.NODE_ENV ?? 'development';
 
 if (NODE_ENV !== 'test') {
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
-      console.warn(`[WARNING] Missing environment variable: ${envVar}`);
+      logger.warn(`[WARNING] Missing environment variable: ${envVar}`);
     }
   }
 }
@@ -34,8 +36,8 @@ const frontendDistPath = path.resolve(__dirname, '../../frontend/dist');
 const isBackendPath = (pathname: string) =>
   pathname.startsWith('/api') || pathname.startsWith('/socket.io');
 
-const app = express();
-const httpServer = createServer(app);
+export const app = express();
+export const httpServer = createServer(app);
 
 const defaultCorsOrigin = ENABLE_FE_PROXY
   ? `http://localhost:${PORT}`
@@ -70,7 +72,9 @@ if (ENABLE_FE_PROXY) {
       pathFilter: (pathname) => !isBackendPath(pathname),
     })
   );
-  console.log(`[${NODE_ENV}] Frontend reverse proxy enabled: ${FRONTEND_DEV_URL}`);
+  if (NODE_ENV !== 'test') {
+    logger.info(`[${NODE_ENV}] Frontend reverse proxy enabled: ${FRONTEND_DEV_URL}`);
+  }
 } else if (fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));
 
@@ -82,18 +86,22 @@ if (ENABLE_FE_PROXY) {
     res.sendFile(path.join(frontendDistPath, 'index.html'));
   });
 
-  console.log(`[${NODE_ENV}] Serving frontend build from ${frontendDistPath}`);
+  if (NODE_ENV !== 'test') {
+    logger.info(`[${NODE_ENV}] Serving frontend build from ${frontendDistPath}`);
+  }
 } else {
-  console.warn(
-    `[${NODE_ENV}] Frontend build not found at ${frontendDistPath}. ` +
-      'Run frontend build or set ENABLE_FE_PROXY=true and start Vite.'
-  );
+  if (NODE_ENV !== 'test') {
+    logger.warn(
+      `[${NODE_ENV}] Frontend build not found at ${frontendDistPath}. ` +
+        'Run frontend build or set ENABLE_FE_PROXY=true and start Vite.'
+    );
+  }
 }
 
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-const io = new Server(httpServer, {
+export const io = new Server(httpServer, {
   cors: {
     origin: corsOrigin,
     credentials: true,
@@ -102,6 +110,8 @@ const io = new Server(httpServer, {
 
 setupWorkspaceSockets(io);
 
-httpServer.listen(Number(PORT), () => {
-  console.log(`[${NODE_ENV}] Backend listening on port ${PORT}`);
-});
+if (NODE_ENV !== 'test') {
+  httpServer.listen(Number(PORT), () => {
+    logger.info(`[${NODE_ENV}] Backend listening on port ${PORT}`);
+  });
+}

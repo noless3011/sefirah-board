@@ -1,6 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { ApiError } from '@sefirah/shared';
 import { AppError } from '../utils/AppError.js';
+import { logger } from '../utils/logger.js';
+import db from '../utils/db.js';
 
 export function notFoundHandler(req: Request, res: Response) {
   const errorObj: ApiError = {
@@ -18,7 +20,7 @@ export function errorHandler(
   res: Response,
   next: NextFunction
 ) {
-  console.error('[Error]:', err);
+  logger.error(err.message || 'Internal Server Error', err);
 
   let statusCode = 500;
   let message = 'Internal Server Error';

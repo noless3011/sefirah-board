@@ -18,6 +18,7 @@ import {
   RefreshTokenResponseSchema,
   ResetPasswordResponseSchema,
 } from '@sefirah/shared';
+import { logger } from '../utils/logger.js';
 import db from '../utils/db.js';
 import { AppError } from '../utils/AppError.js';
 
@@ -456,7 +457,7 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
 
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const resetUrl = `${clientUrl.replace(/\/$/, '')}/reset-password?token=${token}`;
-    console.log(`[Auth] Password reset link for ${normalizedEmail}: ${resetUrl}`);
+    logger.info(`[Auth] Password reset link for ${normalizedEmail}: ${resetUrl}`);
 
     res.status(200).json(ResetPasswordResponseSchema.parse({ message: genericMessage }));
   } catch (error) {
