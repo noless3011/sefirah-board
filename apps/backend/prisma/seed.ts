@@ -48,6 +48,7 @@ async function main() {
       email: 'alex@example.com',
       fullName: 'Alex Rivera',
       password: passwordHash,
+      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
     },
   });
 
@@ -61,9 +62,9 @@ async function main() {
       category: 'Flowcharts',
       thumbnailUrl: 'https://placehold.co/600x400?text=Flowchart+Template',
       elements: [
-        { type: 'rectangle', x: 100, y: 100, width: 150, height: 80, appearance: { fill: '#ffffff', stroke: '#000000' }, content: 'Start' },
-        { type: 'arrow', points: [250, 140, 350, 140], appearance: { stroke: '#000000' } },
-        { type: 'rectangle', x: 350, y: 100, width: 150, height: 80, appearance: { fill: '#ffffff', stroke: '#000000' }, content: 'Process' },
+        { type: 'rectangle', x: 100, y: 100, width: 150, height: 80, appearance: { fill: '#ffffff', stroke: '#000000', strokeWidth: 2 }, content: 'Start' },
+        { type: 'arrow', points: [250, 140, 350, 140], appearance: { stroke: '#000000', strokeWidth: 2 } },
+        { type: 'rectangle', x: 350, y: 100, width: 150, height: 80, appearance: { fill: '#ffffff', stroke: '#000000', strokeWidth: 2 }, content: 'Process' },
       ],
     },
   });
@@ -74,7 +75,11 @@ async function main() {
       description: 'A freeform space for quick ideation and sticky note grouping.',
       category: 'Brainstorming',
       thumbnailUrl: 'https://placehold.co/600x400?text=Brainstorming+Template',
-      elements: [],
+      elements: [
+        { type: 'sticky_note', x: 200, y: 200, width: 120, height: 120, appearance: { fill: '#fff9c4', stroke: '#fbc02d' }, content: 'Main Idea' },
+        { type: 'sticky_note', x: 350, y: 150, width: 120, height: 120, appearance: { fill: '#e1f5fe', stroke: '#0288d1' }, content: 'Feature A' },
+        { type: 'sticky_note', x: 350, y: 250, width: 120, height: 120, appearance: { fill: '#f1f8e9', stroke: '#689f38' }, content: 'Feature B' },
+      ],
     },
   });
 
@@ -82,21 +87,25 @@ async function main() {
     data: {
       title: 'AWS Cloud Architecture',
       description: 'Pre-built service cards for VPC, EC2, S3, and RDS.',
-      category: 'Design Systems',
+      category: 'Design_Systems',
       thumbnailUrl: 'https://placehold.co/600x400?text=AWS+Architecture',
-      elements: [],
+      elements: [
+        { type: 'service_card', x: 100, y: 100, width: 200, height: 120, appearance: { fill: '#ffffff', stroke: '#ff9900' }, title: 'VPC', description: 'Virtual Private Cloud' },
+        { type: 'service_card', x: 350, y: 100, width: 200, height: 120, appearance: { fill: '#ffffff', stroke: '#ff9900' }, title: 'EC2', description: 'Compute Instance' },
+        { type: 'database_card', x: 350, y: 250, width: 200, height: 120, appearance: { fill: '#ffffff', stroke: '#3367d6' }, title: 'RDS', description: 'Relational Database' },
+      ],
     },
   });
 
-  console.log('📄 Created templates.');
+  console.log('📄 Created templates with elements.');
 
   // 4. Create Boards for Klein
-  await prisma.board.create({
+  const board1 = await prisma.board.create({
     data: {
       title: 'YOLO/VAE Architecture',
       ownerId: klein.id,
       type: 'personal',
-      badge: 'active-project',
+      badge: 'active_project',
       visibilityIcon: 'private',
       thumbnailUrl: 'https://placehold.co/600x400?text=YOLO+Architecture',
       elements: {
@@ -113,6 +122,10 @@ async function main() {
           },
           {
             type: 'arrow',
+            x: 400,
+            y: 200,
+            width: 100,
+            height: 2,
             points: [400, 200, 500, 200],
             appearance: { stroke: '#2196f3', strokeWidth: 2 },
             createdBy: klein.id,
@@ -140,6 +153,20 @@ async function main() {
       status: 'archived',
       badge: 'archived',
       visibilityIcon: 'private',
+      elements: {
+        create: [
+          {
+            type: 'text',
+            x: 100,
+            y: 100,
+            width: 300,
+            height: 50,
+            appearance: { fill: 'transparent', stroke: 'none' },
+            content: 'Old System Design',
+            createdBy: klein.id,
+          }
+        ]
+      }
     },
   });
 
@@ -150,7 +177,7 @@ async function main() {
       ownerId: sarah.id,
       sharedById: sarah.id,
       type: 'shared',
-      badge: 'review-required',
+      badge: 'review_required',
       visibilityIcon: 'shared',
       collaborators: {
         create: [
@@ -158,10 +185,34 @@ async function main() {
           { userId: alex.id, role: 'viewer' },
         ],
       },
+      elements: {
+        create: [
+          {
+            type: 'sticky_note',
+            x: 100,
+            y: 100,
+            width: 150,
+            height: 150,
+            appearance: { fill: '#ffe0b2', stroke: '#f57c00' },
+            content: 'Q1 Goals: 20% Growth',
+            createdBy: sarah.id,
+          },
+          {
+            type: 'sticky_note',
+            x: 270,
+            y: 100,
+            width: 150,
+            height: 150,
+            appearance: { fill: '#c8e6c9', stroke: '#388e3c' },
+            content: 'Social Media Campaign',
+            createdBy: sarah.id,
+          }
+        ]
+      }
     },
   });
 
-  console.log('🗂️ Created boards and collaborations.');
+  console.log('🗂️ Created boards and collaborations with elements.');
 
   // 6. Create some initial comments/threads
   await prisma.thread.create({
@@ -195,7 +246,23 @@ async function main() {
     },
   });
 
-  console.log('💬 Created threads and notifications.');
+  // 8. Create a Board Revision
+  await prisma.boardRevision.create({
+    data: {
+      boardId: board1.id,
+      authorId: klein.id,
+      authorName: klein.fullName,
+      description: 'Initial architectural draft',
+      elementCount: 3,
+      elements: [
+        { type: 'rectangle', x: 200, y: 150, width: 200, height: 100, appearance: { fill: '#e3f2fd', stroke: '#2196f3', strokeWidth: 2 }, content: 'Input Image' },
+        { type: 'arrow', points: [400, 200, 500, 200], appearance: { stroke: '#2196f3', strokeWidth: 2 } },
+        { type: 'rectangle', x: 500, y: 150, width: 200, height: 100, appearance: { fill: '#f3e5f5', stroke: '#9c27b0', strokeWidth: 2 }, content: 'Feature Extractor' },
+      ]
+    }
+  });
+
+  console.log('💬 Created threads, notifications, and revisions.');
   console.log('✅ Seeding completed successfully.');
 }
 
