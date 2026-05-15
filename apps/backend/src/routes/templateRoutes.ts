@@ -1,9 +1,13 @@
-import { Router } from 'express';
+import { Router } from "express";
+import {
+    listTemplates,
+    getTemplate,
+} from "../controllers/templateController.js";
 
 const router = Router();
 
 // Domain: Templates
-router.get('/', (req, res) => { res.send('Not implemented'); });
-router.get('/:templateId', (req, res) => { res.send('Not implemented'); });
+router.get("/", listTemplates);
+router.get("/:templateId", getTemplate);
 
 export default router;

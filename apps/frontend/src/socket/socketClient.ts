@@ -1,22 +1,22 @@
-import { io, Socket } from 'socket.io-client';
+import { io, Socket } from "socket.io-client";
 
-const WS_URL = import.meta.env.VITE_WS_URL ?? '/workspace';
+const WS_URL = import.meta.env.VITE_WS_URL ?? "/workspace";
 
 export const socket: Socket = io(WS_URL, {
-  autoConnect: false, // Quan trọng: Chỉ kết nối khi ta gọi hàm
-  withCredentials: true,
-  transports: ['websocket'],
+    autoConnect: false, // Quan trọng: Chỉ kết nối khi ta gọi hàm
+    withCredentials: true,
+    transports: ["websocket"],
 });
 
 export const connectWorkspace = (token: string) => {
-  if (!socket.connected) {
-    socket.auth = { token };
-    socket.connect();
-  }
+    if (!socket.connected) {
+        socket.auth = { token };
+        socket.connect();
+    }
 };
 
 export const disconnectWorkspace = () => {
-  if (socket.connected) {
-    socket.disconnect();
-  }
+    if (socket.connected) {
+        socket.disconnect();
+    }
 };
