@@ -1,44 +1,21 @@
 import axiosClient from "./axiosClient";
+import type {
+  User,
+  UserPreferences,
+  UpdateProfilePayload,
+  UpdatePasswordPayload,
+  UpdatePreferencesPayload,
+  DeactivateAccountPayload,
+} from "@sefirah/shared";
 
-// Types khớp với backend schema (userController.ts + @sefirah/shared)
-
-export interface UserPreferences {
-  emailNotifications: boolean;
-  cursorVisibility: boolean;
-}
-
-export interface User {
-  id: string;
-  fullName: string;
-  email: string;
-  avatarUrl: string | null;
-  preferences: UserPreferences;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// PATCH /me/profile — chỉ fullName và avatarUrl (KHÔNG có email)
-export interface UpdateProfilePayload {
-  fullName?: string;
-  avatarUrl?: string | null;
-}
-
-// PUT /me/password
-export interface UpdatePasswordPayload {
-  currentPassword: string;
-  newPassword: string;
-}
-
-// PATCH /me/preferences
-export interface UpdatePreferencesPayload {
-  emailNotifications?: boolean;
-  cursorVisibility?: boolean;
-}
-
-// DELETE /me — cần password để xác nhận
-export interface DeactivateAccountPayload {
-  password: string;
-}
+export type {
+  User,
+  UserPreferences,
+  UpdateProfilePayload,
+  UpdatePasswordPayload,
+  UpdatePreferencesPayload,
+  DeactivateAccountPayload,
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 

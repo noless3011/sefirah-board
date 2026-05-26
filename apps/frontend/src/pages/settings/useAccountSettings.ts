@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { accountSettingsApi } from '../../api/accountSettings.api';
-import type { User, UserPreferences } from '../../api/accountSettings.api';
+import type { User, UserPreferences } from '@sefirah/shared';
 
 // ─── Local form shapes ────────────────────────────────────────────────────────
 
@@ -116,6 +116,12 @@ export const useAccountSettings = () => {
     setPasswordError('');
     setGlobalError('');
 
+    // Validate fullName
+    if (fullName.trim() === "") {
+      setGlobalError("Họ và tên không được để trống.");
+      return;
+    }
+
     // Validate password nếu người dùng có nhập
     if (security.newPassword) {
       if (!security.currentPassword) {
@@ -134,12 +140,12 @@ export const useAccountSettings = () => {
 
     setIsSaving(true);
     try {
-      // Gọi song song profile + preferences
-      const tasks: Promise<any>[] = [];
+      let updatedUser: User | null = null;
 
       // Chỉ update fullName nếu có thay đổi
       if (fullName.trim() !== user.fullName) {
-        tasks.push(accountSettingsApi.updateProfile({ fullName: fullName.trim() }));
+        const res = await accountSettingsApi.updateProfile({ fullName: fullName.trim() });
+        updatedUser = res.data;
       }
 
       // Chỉ update prefs nếu có thay đổi
@@ -147,15 +153,12 @@ export const useAccountSettings = () => {
         prefs.emailNotifications !== user.preferences.emailNotifications ||
         prefs.cursorVisibility !== user.preferences.cursorVisibility;
       if (prefsChanged) {
-        tasks.push(accountSettingsApi.updatePreferences(prefs));
+        const res = await accountSettingsApi.updatePreferences(prefs);
+        updatedUser = res.data;
       }
 
-      const results = await Promise.all(tasks);
-
-      // Sync lại user từ response cuối cùng có User object
-      const lastUserResult = results.reverse().find((r) => r?.data?.id);
-      if (lastUserResult) {
-        syncFromUser(lastUserResult.data);
+      if (updatedUser) {
+        syncFromUser(updatedUser);
       }
 
       // Đổi password riêng (backend sẽ xóa refresh tokens → cần login lại)
