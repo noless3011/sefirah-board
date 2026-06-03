@@ -47,43 +47,6 @@ export default function AccountSettingsPage() {
 
     return (
         <div style={styles.pageWrapper}>
-            {/* ─── A. SYSTEM HEADER ─── */}
-            <header style={styles.sysHeader}>
-                <div style={styles.headerLeft}>
-                    <div style={styles.logo}>Sefirah Board</div>
-                    <div style={styles.searchWrapper}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" style={{ marginRight: 8 }}>
-                            <circle cx="11" cy="11" r="8" />
-                            <path d="m21 21-4.3-4.3" />
-                        </svg>
-                        <input type="text" placeholder="Search boards..." style={styles.searchInput} />
-                    </div>
-                </div>
-                <div style={styles.headerRight}>
-                    <span style={styles.navLink}>Recent</span>
-                    <span style={styles.navLink}>Templates</span>
-                    <span style={styles.navLink}>Shared</span>
-                    <div style={styles.headerDivider} />
-                    <button style={styles.iconBtn}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
-                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9m7.73 13a2 2 0 0 1-3.46 0" />
-                        </svg>
-                    </button>
-                    <button style={styles.iconBtn}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                        </svg>
-                    </button>
-                    <button style={styles.shareBtn}>Share</button>
-                    <div style={styles.userAvatar}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="#a1a1aa">
-                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                        </svg>
-                    </div>
-                </div>
-            </header>
-
             <div style={styles.mainContent}>
                 <div style={styles.pageHeader}>
                     <h1 style={styles.pageTitle}>Account Settings</h1>
@@ -363,7 +326,8 @@ const styles: Record<string, React.CSSProperties> = {
     pageWrapper: {
         fontFamily: "'Inter', 'Segoe UI', sans-serif",
         background: "#f9fafb",
-        minHeight: "100vh",
+        height: "100%",
+        overflowY: "auto",
     },
     spinner: {
         width: 32,

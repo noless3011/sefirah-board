@@ -18,6 +18,7 @@ import TemplatesPage from "./pages/dashboard/TemplatesPage";
 import SharedPage from "./pages/dashboard/SharedPage";
 import BoardPage from "./pages/workspace/BoardPage";
 import AccountSettingsPage from "./pages/settings/AccountSettingsPage";
+import DashboardLayout from "./pages/dashboard/DashboardLayout";
 
 import type { ReactNode } from "react";
 
@@ -46,33 +47,19 @@ function App() {
                 />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-                {/* Protected Routes */}
+                {/* Protected Routes (Persistent Navigation Layout) */}
                 <Route
-                    path="/dashboard"
                     element={
                         <PrivateRoute>
-                            <DashboardPage />
+                            <DashboardLayout />
                         </PrivateRoute>
                     }
-                />
-
-                <Route
-                    path="/templates"
-                    element={
-                        <PrivateRoute>
-                            <TemplatesPage />
-                        </PrivateRoute>
-                    }
-                />
-
-                <Route
-                    path="/shared"
-                    element={
-                        <PrivateRoute>
-                            <SharedPage />
-                        </PrivateRoute>
-                    }
-                />
+                >
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/templates" element={<TemplatesPage />} />
+                    <Route path="/shared" element={<SharedPage />} />
+                    <Route path="/settings" element={<AccountSettingsPage />} />
+                </Route>
 
                 {/* Dynamic route for individual boards/workspaces */}
                 <Route
@@ -80,15 +67,6 @@ function App() {
                     element={
                         <PrivateRoute>
                             <BoardPage />
-                        </PrivateRoute>
-                    }
-                />
-
-                <Route
-                    path="/settings"
-                    element={
-                        <PrivateRoute>
-                            <AccountSettingsPage />
                         </PrivateRoute>
                     }
                 />
