@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as boardController from "../controllers/boardController.js";
 
 import * as collaborationController from "../controllers/collaborationController.js";
+import * as canvasController from "../controllers/canvasController.js";
 
 const router = Router();
 
@@ -21,13 +22,9 @@ router.post("/:boardId/collaborators/link", collaborationController.generateInvi
 router.patch("/:boardId/collaborators/:userId", collaborationController.updateCollaboratorRole);
 router.delete("/:boardId/collaborators/:userId", collaborationController.removeCollaborator);
 
-// Canvas State REST (to be implemented in canvasController)
-router.get("/:boardId/canvas/elements", (req, res) => {
-    res.send("Not implemented");
-});
-router.put("/:boardId/canvas/snapshot", (req, res) => {
-    res.send("Not implemented");
-});
+// Canvas State REST (implemented in canvasController)
+router.get("/:boardId/canvas/elements", canvasController.getCanvasElements);
+router.put("/:boardId/canvas/snapshot", canvasController.saveCanvasSnapshot);
 
 // Board History (to be implemented in historyController)
 router.get("/:boardId/history", (req, res) => {
