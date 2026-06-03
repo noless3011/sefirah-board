@@ -32,18 +32,12 @@ router.get("/:boardId/history", historyController.listRevisions);
 router.get("/:boardId/history/:revisionId", historyController.getRevisionDetail);
 router.post("/:boardId/history/restore", historyController.restoreRevision);
 
-// Active Threads/Chat (to be implemented in threadController)
-router.get("/:boardId/threads", (req, res) => {
-    res.send("Not implemented");
-});
-router.post("/:boardId/threads", (req, res) => {
-    res.send("Not implemented");
-});
-router.post("/:boardId/threads/:threadId/reply", (req, res) => {
-    res.send("Not implemented");
-});
-router.patch("/:boardId/threads/:threadId", (req, res) => {
-    res.send("Not implemented");
-});
+import * as threadController from "../controllers/threadController.js";
+
+// Active Threads/Chat
+router.get("/:boardId/threads", threadController.listThreads);
+router.post("/:boardId/threads", threadController.createThread);
+router.post("/:boardId/threads/:threadId/reply", threadController.replyToThread);
+router.patch("/:boardId/threads/:threadId", threadController.updateThread);
 
 export default router;
