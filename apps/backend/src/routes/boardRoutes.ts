@@ -3,6 +3,7 @@ import * as boardController from "../controllers/boardController.js";
 
 import * as collaborationController from "../controllers/collaborationController.js";
 import * as canvasController from "../controllers/canvasController.js";
+import * as historyController from "../controllers/historyController.js";
 
 const router = Router();
 
@@ -26,16 +27,10 @@ router.delete("/:boardId/collaborators/:userId", collaborationController.removeC
 router.get("/:boardId/canvas/elements", canvasController.getCanvasElements);
 router.put("/:boardId/canvas/snapshot", canvasController.saveCanvasSnapshot);
 
-// Board History (to be implemented in historyController)
-router.get("/:boardId/history", (req, res) => {
-    res.send("Not implemented");
-});
-router.get("/:boardId/history/:revisionId", (req, res) => {
-    res.send("Not implemented");
-});
-router.post("/:boardId/history/restore", (req, res) => {
-    res.send("Not implemented");
-});
+// Board History
+router.get("/:boardId/history", historyController.listRevisions);
+router.get("/:boardId/history/:revisionId", historyController.getRevisionDetail);
+router.post("/:boardId/history/restore", historyController.restoreRevision);
 
 // Active Threads/Chat (to be implemented in threadController)
 router.get("/:boardId/threads", (req, res) => {
