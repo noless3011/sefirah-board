@@ -1,6 +1,8 @@
 import { Router } from "express";
 import * as boardController from "../controllers/boardController.js";
 
+import * as collaborationController from "../controllers/collaborationController.js";
+
 const router = Router();
 
 // Domain: Board Management
@@ -12,27 +14,12 @@ router.delete("/:boardId", boardController.deleteBoard);
 router.post("/:boardId/thumbnail", boardController.uploadThumbnail);
 router.post("/:boardId/export", boardController.exportBoard);
 
-// Collaboration & Sharing endpoints (to be implemented in collaborationController)
-router.get("/:boardId/collaborators", (req, res) => {
-    res.send("Not implemented");
-});
-router.post("/:boardId/collaborators/invite", (req, res) => {
-    res.send("Not implemented");
-});
-router.post("/:boardId/collaborators/link", (req, res) => {
-    res.send("Not implemented");
-});
-router.patch("/:boardId/collaborators/:userId", (req, res) => {
-    res.send("Not implemented");
-});
-router.delete("/:boardId/collaborators/:userId", (req, res) => {
-    res.send("Not implemented");
-});
-
-// Standalone invite redeem (can also be in a generic invites router)
-router.post("/api/v1/invites/redeem", (req, res) => {
-    res.send("Not implemented");
-});
+// Domain: Collaboration & Sharing
+router.get("/:boardId/collaborators", collaborationController.listCollaborators);
+router.post("/:boardId/collaborators/invite", collaborationController.inviteCollaborator);
+router.post("/:boardId/collaborators/link", collaborationController.generateInviteLink);
+router.patch("/:boardId/collaborators/:userId", collaborationController.updateCollaboratorRole);
+router.delete("/:boardId/collaborators/:userId", collaborationController.removeCollaborator);
 
 // Canvas State REST (to be implemented in canvasController)
 router.get("/:boardId/canvas/elements", (req, res) => {
