@@ -1,4 +1,5 @@
-import { Server, Socket } from "socket.io";
+import { Server, Socket, Namespace } from "socket.io";
+import jwt from "jsonwebtoken";
 
 interface UserPayload {
     userId: string;
@@ -6,8 +7,16 @@ interface UserPayload {
     avatarUrl?: string;
 }
 
+let workspaceNamespace: Namespace | null = null;
+
+export function sendNotificationToUser(userId: string, notification: any) {
+    if (workspaceNamespace) {
+        workspaceNamespace.to(`user:${userId}`).emit("notification", notification);
+    }
+}
+
 export default function setupWorkspaceSockets(io: Server) {
-    const workspaceNamespace = io.of("/workspace");
+    workspaceNamespace = io.of("/workspace");
 
     // In-memory maps to track users and their current boards for precise broadcasting
     const socketUsers = new Map<string, UserPayload>();
@@ -17,6 +26,21 @@ export default function setupWorkspaceSockets(io: Server) {
         console.log(
             `[Socket.io] Client connected to /workspace namespace: ${socket.id}`,
         );
+
+        // Retrieve and verify authentication token to join a personal room
+        const token = socket.handshake.auth?.token;
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret") as any;
+                const userId = decoded?.userId;
+                if (userId) {
+                    socket.join(`user:${userId}`);
+                    console.log(`[Socket.io] Socket ${socket.id} joined user room user:${userId}`);
+                }
+            } catch (err) {
+                console.error(`[Socket.io] Auth token verification failed for socket ${socket.id}:`, err);
+            }
+        }
 
         // --- A. Room Management ---
 

@@ -14,6 +14,7 @@ import {
 } from "@sefirah/shared";
 import db from "../utils/db.js";
 import { AppError } from "../utils/AppError.js";
+import { createNotification } from "../utils/notification.js";
 import {
     parseBody,
     getAuthenticatedUserId,
@@ -150,13 +151,11 @@ export const inviteCollaborator = async (
         const inviter = await db.user.findUnique({ where: { id: userId } });
         const inviterName = inviter ? inviter.fullName : "Someone";
 
-        await db.notification.create({
-            data: {
-                userId: userToInvite.id,
-                type: "invite",
-                message: `${inviterName} invited you to collaborate on "${board.title}".`,
-                boardId,
-            },
+        await createNotification({
+            userId: userToInvite.id,
+            type: "invite",
+            message: `${inviterName} invited you to collaborate on "${board.title}".`,
+            boardId,
         });
 
         res.status(201).json(
@@ -436,13 +435,11 @@ export const redeemInvite = async (
             // Create notification for board owner
             const joiner = await db.user.findUnique({ where: { id: userId } });
             const joinerName = joiner ? joiner.fullName : "Someone";
-            await db.notification.create({
-                data: {
-                    userId: board.ownerId,
-                    type: "invite",
-                    message: `${joinerName} joined your board "${board.title}" using an invite link.`,
-                    boardId: board.id,
-                },
+            await createNotification({
+                userId: board.ownerId,
+                type: "invite",
+                message: `${joinerName} joined your board "${board.title}" using an invite link.`,
+                boardId: board.id,
             });
         }
 

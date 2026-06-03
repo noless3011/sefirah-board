@@ -8,6 +8,7 @@ import {
 } from "@sefirah/shared";
 import db from "../utils/db.js";
 import { AppError } from "../utils/AppError.js";
+import { createNotification } from "../utils/notification.js";
 import {
     parseBody,
     getAuthenticatedUserId,
@@ -185,13 +186,11 @@ export const createThread = async (
                 ? `${author.fullName} mentioned you on "${board.title}".`
                 : `${author.fullName} created a new comment thread on "${board.title}".`;
 
-            await db.notification.create({
-                data: {
-                    userId: recipient.id,
-                    type,
-                    message: msg,
-                    boardId,
-                },
+            await createNotification({
+                userId: recipient.id,
+                type,
+                message: msg,
+                boardId,
             });
         });
 
@@ -270,13 +269,11 @@ export const replyToThread = async (
         const notificationPromises = recipients
             .filter((recipient) => payload.message.includes(`@${recipient.fullName}`))
             .map(async (recipient) => {
-                await db.notification.create({
-                    data: {
-                        userId: recipient.id,
-                        type: "mention",
-                        message: `${author.fullName} mentioned you on "${board.title}".`,
-                        boardId,
-                    },
+                await createNotification({
+                    userId: recipient.id,
+                    type: "mention",
+                    message: `${author.fullName} mentioned you on "${board.title}".`,
+                    boardId,
                 });
             });
 
