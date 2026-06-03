@@ -11,6 +11,7 @@ import {
 } from "@sefirah/shared";
 import db from "../utils/db.js";
 import { AppError } from "../utils/AppError.js";
+import { createNotification } from "../utils/notification.js";
 import {
     parseBody,
     parseQuery,
@@ -315,6 +316,11 @@ export const updateBoard = async (
         if (payload.visibilityIcon !== undefined)
             updateData.visibilityIcon = payload.visibilityIcon;
 
+        const isRenamed = payload.title !== undefined && payload.title !== boardBase.title;
+        const isArchiveChanged = payload.isArchived !== undefined && (payload.isArchived ? "archived" : "active") !== boardBase.status;
+        const mappedBadge = payload.badge ? payload.badge.replace("-", "_") : null;
+        const isBadgeChanged = payload.badge !== undefined && mappedBadge !== boardBase.badge;
+
         const updatedBoard = (await db.board.update({
             where: { id: boardId },
             data: updateData,
@@ -330,6 +336,35 @@ export const updateBoard = async (
                 },
             },
         })) as any;
+
+        if (isRenamed || isArchiveChanged || isBadgeChanged) {
+            const collaborators = await db.collaborator.findMany({
+                where: { boardId },
+            });
+            const owner = await db.user.findUnique({ where: { id: userId } });
+            const ownerName = owner ? owner.fullName : "The owner";
+            let actionMsg = "";
+            if (isRenamed) {
+                actionMsg = `renamed the board to "${payload.title}"`;
+            } else if (isArchiveChanged) {
+                actionMsg = payload.isArchived ? `archived the board` : `unarchived the board`;
+            } else if (isBadgeChanged) {
+                actionMsg = `updated the badge of the board`;
+            }
+
+            const message = `${ownerName} ${actionMsg} "${boardBase.title}".`;
+
+            await Promise.all(
+                collaborators.map((collab) =>
+                    createNotification({
+                        userId: collab.userId,
+                        type: "board-update",
+                        message,
+                        boardId,
+                    })
+                )
+            );
+        }
 
         res.status(200).json(
             BoardSchema.parse({
