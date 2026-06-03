@@ -66,10 +66,9 @@ app.use("/api/v1", apiRouter);
 
 // Specific Invites endpoint documented in API.md as standalone
 import { Router } from "express";
+import { redeemInvite } from "./controllers/collaborationController.js";
 const invitesRouter = Router();
-invitesRouter.post("/redeem", (req, res) => {
-    res.send("Not implemented");
-});
+invitesRouter.post("/redeem", redeemInvite);
 app.use("/api/v1/invites", invitesRouter);
 
 if (ENABLE_FE_PROXY) {
