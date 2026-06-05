@@ -1,0 +1,7 @@
+.connection-line {
+    z-index: 0;
+}
+
+.connection-line--selected path:nth-child(2) {
+    filter: drop-shadow(0 0 3px rgba(66, 133, 244, 0.5));
+}

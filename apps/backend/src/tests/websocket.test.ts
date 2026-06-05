@@ -47,11 +47,14 @@ let serverPort: number;
 let serverUrl: string;
 
 function connectClient(token?: string): ClientSocket {
-    return ClientIO(`${serverUrl}/workspace`, {
+    const opts: any = {
         transports: ["websocket"],
         autoConnect: false,
-        auth: token ? { token } : undefined,
-    });
+    };
+    if (token) {
+        opts.auth = { token };
+    }
+    return ClientIO(`${serverUrl}/workspace`, opts);
 }
 
 /** Wait for an event on a socket with a timeout */
@@ -80,9 +83,9 @@ const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // ---------------------------------------------------------------------------
 
 describe("WebSocket System (/workspace namespace)", () => {
-    let clientA: ClientSocket;
-    let clientB: ClientSocket;
-    let clientC: ClientSocket;
+    let clientA: ClientSocket | undefined = undefined;
+    let clientB: ClientSocket | undefined = undefined;
+    let clientC: ClientSocket | undefined = undefined;
 
     beforeAll(async () => {
         // Start the HTTP server on a random port for tests

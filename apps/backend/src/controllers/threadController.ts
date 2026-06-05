@@ -127,12 +127,14 @@ export const createThread = async (
 
         const payload = parseBody(CreateThreadPayloadSchema, req.body);
 
-        // Verify element exists on this board
-        const element = await db.element.findFirst({
-            where: { id: payload.targetElementId, boardId },
-        });
-        if (!element) {
-            throw new AppError("Target element not found on this board", 404);
+        // Verify element exists on this board (if targetElementId is provided)
+        if (payload.targetElementId) {
+            const element = await db.element.findFirst({
+                where: { id: payload.targetElementId, boardId },
+            });
+            if (!element) {
+                throw new AppError("Target element not found on this board", 404);
+            }
         }
 
         // Fetch author info
@@ -147,7 +149,7 @@ export const createThread = async (
         const thread = await db.thread.create({
             data: {
                 boardId,
-                targetElementId: payload.targetElementId,
+                targetElementId: payload.targetElementId ?? null,
                 authorId: userId,
                 authorName: author.fullName,
                 authorAvatarUrl: author.avatarUrl,

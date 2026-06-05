@@ -1,0 +1,40 @@
+.board-page {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #f8f9fa;
+    display: flex;
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+}
+
+.board-page__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    font-size: 18px;
+    font-weight: 500;
+    color: #6b7280;
+    background-color: #f8f9fa;
+}
+
+.board-page__center {
+    flex-grow: 1;
+    position: relative;
+    height: 100%;
+}
+
+.board-page__right {
+    height: 100%;
+    z-index: 50;
+    flex-shrink: 0;
+}
+
+.board-page__zoom {
+    position: absolute;
+    bottom: 24px;
+    right: 320px; /* To be left of the right panel (280px + margin) */
+    z-index: 100;
+}
