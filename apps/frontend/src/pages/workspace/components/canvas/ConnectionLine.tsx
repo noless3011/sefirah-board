@@ -18,7 +18,6 @@ const ConnectionLine: React.FC<ConnectionLineProps> = ({
     onClick,
 }) => {
     const points = element.points || [];
-    if (points.length < 2) return null;
 
     // Find connected element centers for start/end anchoring
     let startPoint = points[0];
@@ -48,7 +47,10 @@ const ConnectionLine: React.FC<ConnectionLineProps> = ({
         }
     }
 
-    const allPts = [startPoint, ...points.slice(1, -1), endPoint];
+    if (!startPoint || !endPoint) return null;
+
+    const midPoints = points.length > 2 ? points.slice(1, -1) : [];
+    const allPts = [startPoint, ...midPoints, endPoint];
     const strokeColor = element.appearance.strokeColor || "#4285f4";
     const strokeWidth = element.appearance.strokeWidth ?? 2;
     const isDashed = element.strokeDash ?? false;
