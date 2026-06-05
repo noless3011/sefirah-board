@@ -188,7 +188,7 @@ describe("Active Threads / Chat REST API Domain", () => {
             expect(userIds).toContain(editorId);
             expect(userIds).toContain(viewerId);
             expect(userIds).not.toContain(ownerId);
-            expect(notifications[0].type).toBe("comment");
+            expect(notifications[0]!.type).toBe("comment");
         });
 
         it("should create a thread successfully (Viewer collaborator)", async () => {
@@ -319,8 +319,8 @@ describe("Active Threads / Chat REST API Domain", () => {
             // Check if mention notification was created for Owner
             const notifications = await db.notification.findMany();
             expect(notifications.length).toBe(1);
-            expect(notifications[0].userId).toBe(ownerId);
-            expect(notifications[0].type).toBe("mention");
+            expect(notifications[0]!.userId).toBe(ownerId);
+            expect(notifications[0]!.type).toBe("mention");
         });
     });
 

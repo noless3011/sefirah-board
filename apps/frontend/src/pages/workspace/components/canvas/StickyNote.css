@@ -1,0 +1,49 @@
+.sticky-note {
+    position: relative;
+    border-radius: 4px;
+    padding: 16px 18px;
+    min-width: 160px;
+    min-height: 120px;
+    max-width: 240px;
+    cursor: grab;
+    user-select: none;
+    box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.12);
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+    transform: rotate(-1deg);
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.sticky-note:hover {
+    box-shadow: 4px 6px 20px rgba(0, 0, 0, 0.16);
+    transform: rotate(-1deg) translateY(-2px);
+}
+
+.sticky-note:active {
+    cursor: grabbing;
+}
+
+.sticky-note--selected {
+    box-shadow: 0 0 0 2px #4285f4, 4px 6px 20px rgba(66, 133, 244, 0.2);
+}
+
+.sticky-note__comment-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 28px;
+    height: 28px;
+    background: #ea4335;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(234, 67, 53, 0.3);
+    z-index: 1;
+}
+
+.sticky-note__content {
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}

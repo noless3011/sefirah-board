@@ -745,7 +745,7 @@ export type Thread = z.infer<typeof ThreadSchema>;
 
 /** POST /api/v1/boards/:boardId/threads */
 export const CreateThreadPayloadSchema = z.object({
-    targetElementId: UUIDSchema,
+    targetElementId: UUIDSchema.optional(),
     message: z.string().min(1, "Message cannot be empty"),
 });
 export type CreateThreadPayload = z.infer<typeof CreateThreadPayloadSchema>;

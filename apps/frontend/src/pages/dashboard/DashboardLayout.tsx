@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { disconnectWorkspace } from "../../socket/socketClient";
-
+import { boardApi } from "../../api/board.api";
 interface UserProfile {
     fullName: string;
     email: string;
@@ -13,6 +13,20 @@ const DashboardLayout: React.FC = () => {
     const location = useLocation();
     const [user, setUser] = useState<UserProfile | null>(null);
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
+
+    const handleCreateBoard = async () => {
+        setIsCreating(true);
+        try {
+            const board = await boardApi.createBoard({ title: "Untitled Board" });
+            navigate(`/board/${board.id}`);
+        } catch (error) {
+            console.error("Failed to create board", error);
+            alert("Failed to create board. Please try again.");
+        } finally {
+            setIsCreating(false);
+        }
+    };
 
     useEffect(() => {
         // Lấy thông tin user đăng nhập để hiển thị trên Header
@@ -156,10 +170,21 @@ const DashboardLayout: React.FC = () => {
                     <div className="h-6 w-px bg-slate-200" />
 
                     {/* Create New Board Button */}
-                    <button className="rounded-full bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-blue-700 shadow-sm flex items-center gap-1.5">
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
+                    <button 
+                        onClick={handleCreateBoard}
+                        disabled={isCreating}
+                        className={`rounded-full bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-blue-700 shadow-sm flex items-center gap-1.5 ${isCreating ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    >
+                        {isCreating ? (
+                            <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        ) : (
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                        )}
                         <span>Create New Board</span>
                     </button>
 

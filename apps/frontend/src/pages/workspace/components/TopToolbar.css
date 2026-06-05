@@ -1,0 +1,204 @@
+.top-toolbar {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  padding: 8px 16px;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  user-select: none;
+}
+
+/* ── Board title section ── */
+
+.top-toolbar__title-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.top-toolbar__title-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: #4285f4;
+}
+
+.top-toolbar__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a2e;
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.top-toolbar__title:hover {
+  background: #f0f4ff;
+  border-color: #e0e7ff;
+}
+
+.top-toolbar__title-input {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a2e;
+  font-family: inherit;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #4285f4;
+  outline: none;
+  background: #f0f4ff;
+  min-width: 120px;
+  max-width: 260px;
+}
+
+/* ── Divider ── */
+
+.top-toolbar__divider {
+  width: 1px;
+  height: 24px;
+  background: #e5e7eb;
+  flex-shrink: 0;
+}
+
+/* ── Undo / Redo ── */
+
+.top-toolbar__history {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.top-toolbar__history-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.top-toolbar__history-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  color: #1a1a2e;
+}
+
+.top-toolbar__history-btn:active:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.top-toolbar__history-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.top-toolbar__history-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Collaborator avatar stack ── */
+
+.top-toolbar__avatars {
+  display: flex;
+  align-items: center;
+  flex-direction: row-reverse;
+}
+
+.top-toolbar__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  overflow: hidden;
+  transition: transform 0.15s ease;
+}
+
+.top-toolbar__avatar:not(:last-child) {
+  margin-right: -8px;
+}
+
+.top-toolbar__avatar:hover {
+  transform: translateY(-2px);
+  z-index: 2;
+}
+
+.top-toolbar__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.top-toolbar__avatar--extra {
+  background: #e5e7eb;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── Action buttons ── */
+
+.top-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.top-toolbar__btn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 6px 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.top-toolbar__btn:active {
+  transform: scale(0.97);
+}
+
+.top-toolbar__btn--export {
+  background: transparent;
+  border: 2px solid #4285f4;
+  color: #4285f4;
+}
+
+.top-toolbar__btn--export:hover {
+  background: #eef3ff;
+}
+
+.top-toolbar__btn--share {
+  background: #4285f4;
+  border: 2px solid #4285f4;
+  color: #ffffff;
+}
+
+.top-toolbar__btn--share:hover {
+  background: #3367d6;
+  border-color: #3367d6;
+  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
+}

@@ -1,0 +1,145 @@
+import { useState, useCallback, useEffect, useRef } from "react";
+import type { CanvasElement } from "@sefirah/shared";
+import type { ToolType } from "../types/canvas.types";
+import { canvasApi } from "../../../api/board.api";
+import { useCanvasHistory } from "./useCanvasHistory";
+
+export function useCanvasElements(boardId: string) {
+    const [elements, setElements] = useState<CanvasElement[]>([]);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [activeTool, setActiveTool] = useState<ToolType>("select");
+    const [loading, setLoading] = useState(true);
+    const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const elementsRef = useRef(elements);
+
+    const { canUndo, canRedo, undo, redo, pushHistory } = useCanvasHistory(
+        elements,
+        setElements
+    );
+
+    useEffect(() => {
+        elementsRef.current = elements;
+    }, [elements]);
+
+    // Load elements on mount
+    useEffect(() => {
+        let cancelled = false;
+        setLoading(true);
+        canvasApi
+            .getElements(boardId)
+            .then((res) => {
+                if (!cancelled) {
+                    setElements(res.elements);
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to load canvas elements:", err);
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [boardId]);
+
+    // Auto-save every 60 seconds if there are elements
+    useEffect(() => {
+        autoSaveTimer.current = setInterval(() => {
+            if (elementsRef.current.length > 0) {
+                canvasApi
+                    .saveSnapshot(boardId, elementsRef.current)
+                    .catch((err) =>
+                        console.error("Auto-save failed:", err)
+                    );
+            }
+        }, 60000);
+
+        return () => {
+            if (autoSaveTimer.current) {
+                clearInterval(autoSaveTimer.current);
+            }
+        };
+    }, [boardId]);
+
+    const addElement = useCallback(
+        (element: CanvasElement) => {
+            const before = [...elementsRef.current];
+            setElements((prev) => [...prev, element]);
+            pushHistory("add", before, [...before, element]);
+        },
+        [pushHistory]
+    );
+
+    const updateElement = useCallback(
+        (id: string, changes: Partial<CanvasElement>) => {
+            const before = [...elementsRef.current];
+            setElements((prev) =>
+                prev.map((el) =>
+                    el.id === id ? ({ ...el, ...changes } as CanvasElement) : el
+                )
+            );
+            const after = before.map((el) =>
+                el.id === id ? ({ ...el, ...changes } as CanvasElement) : el
+            );
+            pushHistory("update", before, after);
+        },
+        [pushHistory]
+    );
+
+    const deleteElement = useCallback(
+        (id: string) => {
+            const before = [...elementsRef.current];
+            setElements((prev) => prev.filter((el) => el.id !== id));
+            pushHistory(
+                "remove",
+                before,
+                before.filter((el) => el.id !== id)
+            );
+            setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+        },
+        [pushHistory]
+    );
+
+    const selectElement = useCallback(
+        (id: string | null, addToSelection = false) => {
+            if (id === null) {
+                setSelectedIds([]);
+                return;
+            }
+            if (addToSelection) {
+                setSelectedIds((prev) =>
+                    prev.includes(id)
+                        ? prev.filter((sid) => sid !== id)
+                        : [...prev, id]
+                );
+            } else {
+                setSelectedIds([id]);
+            }
+        },
+        []
+    );
+
+    const selectedElements = elements.filter((el) =>
+        selectedIds.includes(el.id)
+    );
+
+    return {
+        elements,
+        setElements,
+        selectedIds,
+        selectedElements,
+        activeTool,
+        setActiveTool,
+        loading,
+        addElement,
+        updateElement,
+        deleteElement,
+        selectElement,
+        canUndo,
+        canRedo,
+        undo,
+        redo,
+    };
+}

@@ -30,9 +30,9 @@ export const getNotifications = async (
         const limit = parsed.limit ?? 20;
 
         let isRead: boolean | undefined = undefined;
-        if (req.query.isRead === "true" || req.query.isRead === "1" || req.query.isRead === true) {
+        if (req.query.isRead === "true" || req.query.isRead === "1") {
             isRead = true;
-        } else if (req.query.isRead === "false" || req.query.isRead === "0" || req.query.isRead === false) {
+        } else if (req.query.isRead === "false" || req.query.isRead === "0") {
             isRead = false;
         }
 
