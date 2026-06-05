@@ -70,6 +70,11 @@ const Canvas: React.FC<CanvasProps> = ({
                     startElementId: firstConnectElementIdRef.current,
                     endElementId: id,
                     points: [],
+                    x: 0,
+                    y: 0,
+                    width: 0,
+                    height: 0,
+                    rotation: 0,
                     zIndex: baseZIndex + 1,
                     isLocked: false,
                     appearance: {
@@ -171,6 +176,11 @@ const Canvas: React.FC<CanvasProps> = ({
                     id: lineId,
                     type: "line",
                     points: [coords],
+                    x: 0,
+                    y: 0,
+                    width: 0,
+                    height: 0,
+                    rotation: 0,
                     zIndex: baseZIndex + 1,
                     isLocked: false,
                     appearance: {
