@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import type { CanvasElementAppearance, Thread } from "@sefirah/shared";
+import type { CanvasElementAppearance, Thread, CanvasElement } from "@sefirah/shared";
 
 
 // Components
@@ -51,7 +51,9 @@ const BoardPage: React.FC = () => {
         cursors,
         onlineUsers,
         emitCursorMove,
-        emitElementUpdate
+        emitElementCreate,
+        emitElementUpdate,
+        emitElementDelete
     } = useCollaboration(
         boardId!,
         addElement,
@@ -127,6 +129,38 @@ const BoardPage: React.FC = () => {
         }
     };
 
+    const handleElementChange = (changes: Partial<CanvasElement>) => {
+        selectedIds.forEach(id => {
+            updateElement(id, changes);
+            emitElementUpdate(id, changes);
+        });
+    };
+
+    const handleAddElementDirect = (newElement: CanvasElement) => {
+        addElement(newElement);
+        emitElementCreate(newElement);
+    };
+
+    // Global keydown handler to delete elements
+    useEffect(() => {
+        const handleGlobalKeyDown = (e: KeyboardEvent) => {
+            const activeTag = document.activeElement?.tagName;
+            if (activeTag === "INPUT" || activeTag === "TEXTAREA" || document.activeElement?.getAttribute("contenteditable") === "true") {
+                return;
+            }
+
+            if ((e.key === "Delete" || e.key === "Backspace") && selectedIds.length > 0) {
+                selectedIds.forEach(id => {
+                    deleteElement(id);
+                    emitElementDelete(id);
+                });
+            }
+        };
+
+        window.addEventListener("keydown", handleGlobalKeyDown);
+        return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+    }, [selectedIds, deleteElement, emitElementDelete]);
+
     const handleMouseMove = (e: React.MouseEvent) => {
         emitCursorMove(e.clientX, e.clientY);
     };
@@ -170,6 +204,9 @@ const BoardPage: React.FC = () => {
                     collaboratorCursors={cursors}
                     viewport={viewport}
                     setViewport={setViewport}
+                    activeTool={activeTool}
+                    setActiveTool={setActiveTool}
+                    onAddElement={handleAddElementDirect}
                 />
             </div>
 
@@ -179,6 +216,7 @@ const BoardPage: React.FC = () => {
                     onTabChange={setActiveTab}
                     selectedElement={selectedElement}
                     onAppearanceChange={handleAppearanceChange}
+                    onElementChange={handleElementChange}
                     threads={threads}
                     onThreadClick={(id) => console.log("Thread clicked", id)}
                     chatContent={

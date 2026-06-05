@@ -7,6 +7,7 @@ interface RightPanelProps {
     onTabChange: (tab: "properties" | "chat") => void;
     selectedElement: CanvasElement | null;
     onAppearanceChange: (changes: Partial<CanvasElementAppearance>) => void;
+    onElementChange: (changes: Partial<CanvasElement>) => void;
     threads: Thread[];
     onThreadClick: (threadId: string) => void;
     chatContent: React.ReactNode;
@@ -210,6 +211,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
     onTabChange,
     selectedElement,
     onAppearanceChange,
+    onElementChange,
     threads,
     onThreadClick,
     chatContent,
@@ -282,6 +284,57 @@ const RightPanel: React.FC<RightPanelProps> = ({
                                         onChange={handleTypographyChange}
                                     />
                                 </div>
+
+                                {/* Details section based on element type */}
+                                {selectedElement && ["service-card", "database-card"].includes(selectedElement.type) && (
+                                    <div className="right-panel__section">
+                                        <h3 className="right-panel__section-header">Card Details</h3>
+                                        <div className="right-panel__prop-row-vertical">
+                                            <span className="right-panel__prop-label">Title</span>
+                                            <input
+                                                type="text"
+                                                className="right-panel__input-text"
+                                                value={(selectedElement as any).title || ""}
+                                                onChange={(e) => onElementChange({ title: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="right-panel__prop-row-vertical">
+                                            <span className="right-panel__prop-label">Description</span>
+                                            <textarea
+                                                className="right-panel__textarea"
+                                                value={(selectedElement as any).description || ""}
+                                                onChange={(e) => onElementChange({ description: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="right-panel__prop-row-vertical">
+                                            <span className="right-panel__prop-label">Badge</span>
+                                            <select
+                                                className="right-panel__select"
+                                                value={(selectedElement as any).badge || "SERVICE"}
+                                                onChange={(e) => onElementChange({ badge: e.target.value })}
+                                            >
+                                                <option value="SERVICE">SERVICE</option>
+                                                <option value="DATABASE">DATABASE</option>
+                                                <option value="API">API</option>
+                                                <option value="CACHE">CACHE</option>
+                                                <option value="QUEUE">QUEUE</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedElement && ["sticky-note", "text"].includes(selectedElement.type) && (
+                                    <div className="right-panel__section">
+                                        <h3 className="right-panel__section-header">Content</h3>
+                                        <div className="right-panel__prop-row-vertical">
+                                            <textarea
+                                                className="right-panel__textarea"
+                                                value={(selectedElement as any).content || ""}
+                                                onChange={(e) => onElementChange({ content: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Divider */}
                                 <div className="right-panel__divider" />
