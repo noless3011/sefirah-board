@@ -44,24 +44,30 @@ export function useCanvasElements(boardId: string) {
         };
     }, [boardId]);
 
-    // Auto-save every 60 seconds if there are elements
+    // Debounced save whenever elements change
     useEffect(() => {
-        autoSaveTimer.current = setInterval(() => {
-            if (elementsRef.current.length > 0) {
-                canvasApi
-                    .saveSnapshot(boardId, elementsRef.current)
-                    .catch((err) =>
-                        console.error("Auto-save failed:", err)
-                    );
-            }
-        }, 60000);
+        if (loading) return; // Don't save before initial elements load completes!
+
+        // Clear any existing timer
+        if (autoSaveTimer.current) {
+            clearTimeout(autoSaveTimer.current);
+        }
+
+        // Set a new timer to save after 1000ms of inactivity
+        autoSaveTimer.current = setTimeout(() => {
+            canvasApi
+                .saveSnapshot(boardId, elements)
+                .catch((err) =>
+                    console.error("Auto-save failed:", err)
+                );
+        }, 1000);
 
         return () => {
             if (autoSaveTimer.current) {
-                clearInterval(autoSaveTimer.current);
+                clearTimeout(autoSaveTimer.current);
             }
         };
-    }, [boardId]);
+    }, [elements, boardId, loading]);
 
     const addElement = useCallback(
         (element: CanvasElement) => {
