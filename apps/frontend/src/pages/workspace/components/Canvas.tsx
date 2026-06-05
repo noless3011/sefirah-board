@@ -46,6 +46,7 @@ const Canvas: React.FC<CanvasProps> = ({
 
     // Handle element dragging
     const draggingRef = useRef<{ id: string; startX: number; startY: number; initialX: number; initialY: number } | null>(null);
+    const initialPointsRef = useRef<{ x: number; y: number }[] | null>(null);
     
     // Tracking state for drawing & connections
     const firstConnectElementIdRef = useRef<string | null>(null);
@@ -101,6 +102,12 @@ const Canvas: React.FC<CanvasProps> = ({
                 onSelect(id, e.shiftKey || e.ctrlKey || e.metaKey);
             }
 
+            if (element.type === "line" && element.points) {
+                initialPointsRef.current = [...element.points];
+            } else {
+                initialPointsRef.current = null;
+            }
+
             draggingRef.current = {
                 id,
                 startX: e.clientX,
@@ -137,10 +144,20 @@ const Canvas: React.FC<CanvasProps> = ({
             const dx = (e.clientX - startX) / viewport.zoom;
             const dy = (e.clientY - startY) / viewport.zoom;
 
-            onUpdateElement(id, {
-                x: initialX + dx,
-                y: initialY + dy
-            });
+            if (initialPointsRef.current) {
+                const shiftedPoints = initialPointsRef.current.map(p => ({
+                    x: p.x + dx,
+                    y: p.y + dy
+                }));
+                onUpdateElement(id, {
+                    points: shiftedPoints
+                });
+            } else {
+                onUpdateElement(id, {
+                    x: initialX + dx,
+                    y: initialY + dy
+                });
+            }
         }
     };
 
@@ -154,6 +171,7 @@ const Canvas: React.FC<CanvasProps> = ({
             setActiveTool("select");
         }
         draggingRef.current = null;
+        initialPointsRef.current = null;
     };
 
     const handleContainerMouseDown = (e: React.MouseEvent) => {
@@ -386,10 +404,7 @@ const Canvas: React.FC<CanvasProps> = ({
                         element={line as any}
                         allElements={elements}
                         isSelected={selectedIds.includes(line.id)}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onSelect(line.id, e.shiftKey);
-                        }}
+                        onMouseDown={(e) => handleElementMouseDown(e, line.id)}
                     />
                 ))}
 

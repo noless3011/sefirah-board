@@ -8,14 +8,14 @@ interface ConnectionLineProps {
     };
     allElements: CanvasElement[];
     isSelected: boolean;
-    onClick: (e: React.MouseEvent) => void;
+    onMouseDown: (e: React.MouseEvent) => void;
 }
 
 const ConnectionLine: React.FC<ConnectionLineProps> = ({
     element,
     allElements,
     isSelected,
-    onClick,
+    onMouseDown,
 }) => {
     const points = element.points || [];
 
@@ -78,7 +78,7 @@ const ConnectionLine: React.FC<ConnectionLineProps> = ({
                 overflow: "visible",
             }}
             viewBox={`${minX} ${minY} ${maxX - minX} ${maxY - minY}`}
-            onClick={onClick}
+            onMouseDown={onMouseDown}
         >
             {/* Invisible wider path for easier clicking */}
             <path
