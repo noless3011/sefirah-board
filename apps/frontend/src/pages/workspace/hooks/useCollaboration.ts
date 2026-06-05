@@ -38,6 +38,19 @@ export function useCollaboration(
         return colorMap.current.get(userId)!;
     }, []);
 
+    // Stabilize callbacks using refs to avoid useEffect triggers on state changes
+    const onElementCreatedRef = useRef(onElementCreated);
+    const onElementUpdatedRef = useRef(onElementUpdated);
+    const onElementDeletedRef = useRef(onElementDeleted);
+    const getColorRef = useRef(getColor);
+
+    useEffect(() => {
+        onElementCreatedRef.current = onElementCreated;
+        onElementUpdatedRef.current = onElementUpdated;
+        onElementDeletedRef.current = onElementDeleted;
+        getColorRef.current = getColor;
+    });
+
     // Join the board room
     useEffect(() => {
         if (!socket.connected) return;
@@ -74,7 +87,7 @@ export function useCollaboration(
                 const cursor: CollaboratorCursorInfo = {
                     userId: data.userId,
                     userName: data.userName,
-                    color: getColor(data.userId),
+                    color: getColorRef.current(data.userId),
                     x: data.x,
                     y: data.y,
                 };
@@ -88,18 +101,18 @@ export function useCollaboration(
         };
 
         const handleElementCreated = (data: { element: CanvasElement }) => {
-            onElementCreated(data.element);
+            onElementCreatedRef.current(data.element);
         };
 
         const handleElementUpdated = (data: {
             id: string;
             changes: Partial<CanvasElement>;
         }) => {
-            onElementUpdated(data.id, data.changes);
+            onElementUpdatedRef.current(data.id, data.changes);
         };
 
         const handleElementDeleted = (data: { id: string }) => {
-            onElementDeleted(data.id);
+            onElementDeletedRef.current(data.id);
         };
 
         socket.on("user-joined", handleUserJoined);
@@ -118,14 +131,7 @@ export function useCollaboration(
             socket.off("element-deleted", handleElementDeleted);
             socket.emit("leave-room", { boardId });
         };
-    }, [
-        socket,
-        boardId,
-        getColor,
-        onElementCreated,
-        onElementUpdated,
-        onElementDeleted,
-    ]);
+    }, [socket, boardId]);
 
     const emitCursorMove = useCallback(
         (x: number, y: number) => {
