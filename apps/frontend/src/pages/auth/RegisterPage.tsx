@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { authApi } from "../../api/auth.api";
 
 const RegisterPage = () => {
@@ -10,6 +10,8 @@ const RegisterPage = () => {
     });
     const [error, setError] = useState("");
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const redirectUrl = searchParams.get("redirect");
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -17,7 +19,7 @@ const RegisterPage = () => {
         try {
             await authApi.register(formData);
             alert("Đăng ký thành công! Vui lòng đăng nhập.");
-            navigate("/login");
+            navigate(redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login");
         } catch (err: any) {
             setError(err.response?.data?.message || "Đăng ký thất bại!");
         }
@@ -76,7 +78,7 @@ const RegisterPage = () => {
                 <p className="mt-6 text-center text-sm text-gray-600">
                     Đã có tài khoản?{" "}
                     <Link
-                        to="/login"
+                        to={redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login"}
                         className="font-semibold text-blue-600 hover:underline"
                     >
                         Đăng nhập

@@ -9,6 +9,7 @@ import {
     ExportBoardPayloadSchema,
     ExportBoardResponseSchema,
 } from "@sefirah/shared";
+import { randomUUID } from "crypto";
 import db from "../utils/db.js";
 import { AppError } from "../utils/AppError.js";
 import { createNotification } from "../utils/notification.js";
@@ -160,6 +161,18 @@ export const createBoard = async (
             req.body,
         );
 
+        let templateElements: any[] = [];
+        if (templateId) {
+            const template = await db.template.findUnique({
+                where: { id: templateId }
+            });
+            if (template && template.elements) {
+                templateElements = typeof template.elements === "string"
+                    ? JSON.parse(template.elements)
+                    : (template.elements as any[]);
+            }
+        }
+
         const board = (await db.board.create({
             data: {
                 title,
@@ -176,6 +189,59 @@ export const createBoard = async (
                 },
             },
         })) as any;
+
+        if (templateElements.length > 0) {
+            const idMap: { [oldId: string]: string } = {};
+            const elementsWithNewIds = templateElements.map((el: any) => {
+                const oldId = el.id || el.tempId || Math.random().toString();
+                const newId = randomUUID();
+                idMap[oldId] = newId;
+                return {
+                    ...el,
+                    id: newId,
+                    oldId,
+                };
+            });
+
+            for (const el of elementsWithNewIds) {
+                const mappedStartElementId = el.startElementId ? (idMap[el.startElementId] || el.startElementId) : null;
+                const mappedEndElementId = el.endElementId ? (idMap[el.endElementId] || el.endElementId) : null;
+
+                let type = el.type;
+                if (type === "sticky-note" || type === "sticky_note") type = "sticky_note";
+                else if (type === "service-card" || type === "service_card") type = "service_card";
+                else if (type === "database-card" || type === "database_card") type = "database_card";
+
+                await db.element.create({
+                    data: {
+                        id: el.id,
+                        boardId: board.id,
+                        type,
+                        x: el.x || 0,
+                        y: el.y || 0,
+                        width: el.width || 100,
+                        height: el.height || 100,
+                        rotation: el.rotation ?? 0,
+                        zIndex: el.zIndex ?? 0,
+                        isLocked: el.isLocked ?? false,
+                        appearance: el.appearance ?? {},
+                        createdBy: userId,
+                        content: el.content || null,
+                        badge: el.badge || null,
+                        title: el.title || null,
+                        description: el.description || null,
+                        src: el.src || null,
+                        altText: el.altText || null,
+                        label: el.label || null,
+                        childElementIds: el.childElementIds || null,
+                        startElementId: mappedStartElementId,
+                        endElementId: mappedEndElementId,
+                        points: el.points || null,
+                        strokeDash: el.strokeDash ?? null,
+                    }
+                });
+            }
+        }
 
         res.status(201).json(
             BoardSchema.parse({

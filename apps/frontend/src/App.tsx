@@ -3,6 +3,7 @@ import {
     Routes,
     Route,
     Navigate,
+    useLocation,
 } from "react-router-dom";
 import { SocketProvider } from "./socket/SocketProvider";
 
@@ -19,16 +20,18 @@ import SharedPage from "./pages/dashboard/SharedPage";
 import BoardPage from "./pages/workspace/BoardPage";
 import AccountSettingsPage from "./pages/settings/AccountSettingsPage";
 import DashboardLayout from "./pages/dashboard/DashboardLayout";
+import RedeemInvitePage from "./pages/dashboard/RedeemInvitePage";
 
 import type { ReactNode } from "react";
 
 const PrivateRoute = ({ children }: { children: ReactNode }) => {
     const token = localStorage.getItem("access_token");
+    const location = useLocation();
 
     return token ? (
         <SocketProvider>{children}</SocketProvider>
     ) : (
-        <Navigate to="/login" replace />
+        <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`} replace />
     );
 };
 
@@ -59,6 +62,7 @@ function App() {
                     <Route path="/templates" element={<TemplatesPage />} />
                     <Route path="/shared" element={<SharedPage />} />
                     <Route path="/settings" element={<AccountSettingsPage />} />
+                    <Route path="/invites/redeem" element={<RedeemInvitePage />} />
                 </Route>
 
                 {/* Dynamic route for individual boards/workspaces */}
