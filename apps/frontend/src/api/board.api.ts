@@ -125,4 +125,20 @@ export const collaborationApi = {
                 data
             )
             .then((r) => r.data),
+
+    /** PATCH /boards/:boardId/collaborators/:userId — Update role */
+    updateCollaboratorRole: (
+        boardId: string,
+        userId: string,
+        role: "viewer" | "editor"
+    ) =>
+        axiosClient
+            .patch(`/boards/${boardId}/collaborators/${userId}`, { role })
+            .then((r) => r.data),
+
+    /** DELETE /boards/:boardId/collaborators/:userId — Revoke access */
+    removeCollaborator: (boardId: string, userId: string) =>
+        axiosClient
+            .delete(`/boards/${boardId}/collaborators/${userId}`)
+            .then((r) => r.data),
 };

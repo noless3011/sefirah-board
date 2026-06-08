@@ -52,6 +52,15 @@ export function sendNotificationToUser(userId: string, notification: unknown) {
     }
 }
 
+/**
+ * Broadcast an event and payload to all clients in a specific board room.
+ */
+export function broadcastToBoard(boardId: string, event: string, payload: unknown) {
+    if (workspaceNamespace) {
+        workspaceNamespace.to(boardId).emit(event, payload);
+    }
+}
+
 // ---------------------------------------------------------------------------
 // JWT authentication middleware for Socket.IO
 // ---------------------------------------------------------------------------
