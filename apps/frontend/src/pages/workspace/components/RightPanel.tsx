@@ -83,34 +83,65 @@ interface ColorPickerProps {
     onChange: (color: string) => void;
 }
 
-const ColorPicker: React.FC<ColorPickerProps> = ({ label = "Fill Color", currentColor, onChange }) => (
-    <div className="right-panel__prop-row">
-        <span className="right-panel__prop-label">{label}</span>
-        <div className="right-panel__colors">
-            {PRESET_COLORS.map((color) => (
-                <button
-                    key={color.value}
-                    className={`right-panel__color-swatch${
-                        currentColor === color.value ? " right-panel__color-swatch--selected" : ""
-                    }`}
-                    style={{ background: color.value }}
-                    onClick={() => onChange(color.value)}
-                    title={color.label}
-                    aria-label={`Set fill color to ${color.label}`}
-                    type="button"
-                />
-            ))}
-            <button
-                className="right-panel__color-add"
-                title="Custom color"
-                aria-label="Add custom color"
-                type="button"
-            >
-                +
-            </button>
+const ColorPicker: React.FC<ColorPickerProps> = ({ label = "Fill Color", currentColor, onChange }) => {
+    const colorInputRef = React.useRef<HTMLInputElement>(null);
+    const isCustomSelected = currentColor && !PRESET_COLORS.some(c => c.value === currentColor);
+
+    return (
+        <div className="right-panel__prop-row">
+            <span className="right-panel__prop-label">{label}</span>
+            <div className="right-panel__colors">
+                {PRESET_COLORS.map((color) => (
+                    <button
+                        key={color.value}
+                        className={`right-panel__color-swatch${
+                            currentColor === color.value ? " right-panel__color-swatch--selected" : ""
+                        }`}
+                        style={{ background: color.value }}
+                        onClick={() => onChange(color.value)}
+                        title={color.label}
+                        aria-label={`Set color to ${color.label}`}
+                        type="button"
+                    />
+                ))}
+                <div style={{ position: "relative", display: "inline-block" }}>
+                    <button
+                        className={`right-panel__color-add${
+                            isCustomSelected ? " right-panel__color-swatch--selected" : ""
+                        }`}
+                        style={{
+                            background: isCustomSelected ? currentColor : "transparent",
+                            borderStyle: isCustomSelected ? "solid" : "dashed",
+                            color: isCustomSelected ? "#ffffff" : "#9ca3af",
+                            textShadow: isCustomSelected ? "0 1px 2px rgba(0,0,0,0.5)" : "none"
+                        }}
+                        onClick={() => colorInputRef.current?.click()}
+                        title="Custom color"
+                        aria-label="Add custom color"
+                        type="button"
+                    >
+                        +
+                    </button>
+                    <input
+                        ref={colorInputRef}
+                        type="color"
+                        value={currentColor || "#ffffff"}
+                        onChange={(e) => onChange(e.target.value)}
+                        style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            opacity: 0,
+                            width: 0,
+                            height: 0,
+                            pointerEvents: "none"
+                        }}
+                    />
+                </div>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 interface BorderWidthSliderProps {
     label?: string;
