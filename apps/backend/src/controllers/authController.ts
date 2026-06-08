@@ -572,3 +572,18 @@ export const resetPassword = async (
         next(error);
     }
 };
+
+export const getAuthConfig = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        res.status(200).json({
+            googleClientId: process.env.GOOGLE_CLIENT_ID || "",
+            githubClientId: process.env.GITHUB_CLIENT_ID || "",
+        });
+    } catch (error) {
+        next(error);
+    }
+};

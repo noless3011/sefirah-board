@@ -12,6 +12,8 @@ import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import GoogleCallbackPage from "./pages/auth/GoogleCallbackPage";
+import GithubCallbackPage from "./pages/auth/GithubCallbackPage";
 
 // Authenticated Pages
 import DashboardPage from "./pages/dashboard/DashboardPage";
@@ -49,6 +51,14 @@ function App() {
                     element={<ForgotPasswordPage />}
                 />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route
+                    path="/auth/google/callback"
+                    element={<GoogleCallbackPage />}
+                />
+                <Route
+                    path="/auth/github/callback"
+                    element={<GithubCallbackPage />}
+                />
 
                 {/* Protected Routes (Persistent Navigation Layout) */}
                 <Route

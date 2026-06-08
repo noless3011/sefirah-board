@@ -55,4 +55,10 @@ export const authApi = {
             data,
         );
     },
+
+    getAuthConfig: () => {
+        return axiosClient.get<{ googleClientId: string; githubClientId: string }>(
+            `${AUTH_URL}/config`,
+        );
+    },
 };
