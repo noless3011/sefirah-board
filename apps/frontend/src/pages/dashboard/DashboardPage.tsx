@@ -386,9 +386,9 @@ const BoardCard: React.FC<BoardCardProps> = ({
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
         
-        // Tilt coefficient (max 10deg for subtle, sleek movement)
-        const rotateX = ((centerY - y) / centerY) * 10;
-        const rotateY = ((x - centerX) / centerX) * 10;
+        // Tilt coefficient (max 4deg for subtle, sleek movement)
+        const rotateX = ((centerY - y) / centerY) * 4;
+        const rotateY = ((x - centerX) / centerX) * 4;
         
         setTiltStyle({
             transform: `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.025, 1.025, 1.025)`,
