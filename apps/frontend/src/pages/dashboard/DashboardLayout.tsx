@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { Outlet, NavLink, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { disconnectWorkspace } from "../../socket/socketClient";
 import { boardApi, collaborationApi } from "../../api/board.api";
 import { notificationApi } from "../../api/notification.api";
@@ -16,6 +16,8 @@ interface UserProfile {
 const DashboardLayout: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const searchQuery = searchParams.get("search") || "";
     const [user, setUser] = useState<UserProfile | null>(null);
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
@@ -194,6 +196,16 @@ const DashboardLayout: React.FC = () => {
                         <input
                             type="text"
                             placeholder="Search boards..."
+                            value={searchQuery}
+                            onChange={(e) => {
+                                const newParams = new URLSearchParams(searchParams);
+                                if (e.target.value) {
+                                    newParams.set("search", e.target.value);
+                                } else {
+                                    newParams.delete("search");
+                                }
+                                setSearchParams(newParams);
+                            }}
                             className="w-full rounded-lg border-none bg-[#F1F3F9] py-1.5 pl-9 pr-4 text-sm text-slate-600 outline-none transition focus:bg-[#E5E7EB]"
                         />
                     </div>
