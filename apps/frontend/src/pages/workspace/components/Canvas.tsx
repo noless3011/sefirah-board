@@ -54,7 +54,7 @@ const Canvas: React.FC<CanvasProps> = ({
         }
     };
 
-    const { handleWheel, startPan, movePan, endPan, isPanning, screenToCanvas } = useCanvas(containerRef);
+    const { startPan, movePan, endPan, isPanning, screenToCanvas } = useCanvas(containerRef);
 
     // Sync viewport state to hook's state
     useEffect(() => {
@@ -72,7 +72,7 @@ const Canvas: React.FC<CanvasProps> = ({
     const drawingPointsRef = useRef<{ x: number; y: number }[]>([]);
 
     const handleElementMouseDown = (e: React.MouseEvent, id: string) => {
-        if (activeTool === "select" || activeTool === "connector") {
+        if (e.button === 0 && (activeTool === "select" || activeTool === "connector")) {
             e.stopPropagation();
         }
 
@@ -436,7 +436,6 @@ const Canvas: React.FC<CanvasProps> = ({
         <div
             ref={containerRef}
             className={`canvas-container ${isPanning ? 'canvas-container--panning' : ''}`}
-            onWheel={handleWheel}
             onMouseDown={handleContainerMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}

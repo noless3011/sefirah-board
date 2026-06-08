@@ -40,43 +40,58 @@ export function useCanvas(canvasRef: React.RefObject<HTMLDivElement | null>) {
         }));
     }, []);
 
-    const handleWheel = useCallback(
-        (e: React.WheelEvent) => {
-            if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
-                const rect = canvasRef.current?.getBoundingClientRect();
-                if (!rect) return;
+    // Non-passive native event listener to allow scroll-to-zoom and gesture panning
+    useEffect(() => {
+        const canvasEl = canvasRef.current;
+        if (!canvasEl) return;
 
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-                const v = viewportRef.current;
-                const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-                const newZoom = Math.min(
-                    Math.max(v.zoom + delta, MIN_ZOOM),
-                    MAX_ZOOM
-                );
-                const scale = newZoom / v.zoom;
+        const onWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            const rect = canvasEl.getBoundingClientRect();
+            if (!rect) return;
 
-                setViewport({
-                    x: mouseX - (mouseX - v.x) * scale,
-                    y: mouseY - (mouseY - v.y) * scale,
-                    zoom: newZoom,
-                });
-            } else {
-                // Pan
-                setViewport((v) => ({
-                    ...v,
-                    x: v.x - e.deltaX,
-                    y: v.y - e.deltaY,
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const v = viewportRef.current;
+
+            // Pan horizontally if scrolling horizontally (trackpads)
+            if (e.deltaX !== 0 && !e.ctrlKey && !e.metaKey) {
+                setViewport((current) => ({
+                    ...current,
+                    x: current.x - e.deltaX,
+                    y: current.y - e.deltaY,
                 }));
+                return;
             }
-        },
-        [canvasRef]
-    );
+
+            // Zoom directly on vertical scroll or pinch
+            const zoomStep = e.ctrlKey || e.metaKey ? 0.05 : 0.03;
+            const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+            const newZoom = Math.min(
+                Math.max(v.zoom + delta, MIN_ZOOM),
+                MAX_ZOOM
+            );
+            const scale = newZoom / v.zoom;
+
+            setViewport({
+                x: mouseX - (mouseX - v.x) * scale,
+                y: mouseY - (mouseY - v.y) * scale,
+                zoom: newZoom,
+            });
+        };
+
+        canvasEl.addEventListener("wheel", onWheel, { passive: false });
+        return () => {
+            canvasEl.removeEventListener("wheel", onWheel);
+        };
+    }, [canvasRef]);
+
+    // Keep handleWheel as empty callback for compatibility
+    const handleWheel = useCallback(() => {}, []);
 
     const startPan = useCallback(
         (e: React.MouseEvent) => {
-            if (e.button === 1 || (e.button === 0 && e.altKey)) {
+            if (e.button === 1 || e.button === 2 || (e.button === 0 && e.altKey)) {
                 e.preventDefault();
                 setIsPanning(true);
                 panStart.current = {
