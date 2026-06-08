@@ -33,3 +33,52 @@
     pointer-events: none;
     z-index: -1;
 }
+
+/* ── Selection Bounding Box & Resizing Handles ── */
+
+.canvas-selection-bbox {
+    border: 1.5px dashed #4285f4;
+    box-sizing: border-box;
+}
+
+.canvas-resize-handle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #ffffff;
+    border: 1.5px solid #4285f4;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    transition: transform 0.1s ease, background-color 0.1s ease;
+    z-index: 10;
+}
+
+.canvas-resize-handle:hover {
+    transform: translate(-50%, -50%) scale(1.3);
+    background: #4285f4;
+}
+
+.canvas-resize-handle--tl {
+    top: 0;
+    left: 0;
+    cursor: nwse-resize;
+}
+
+.canvas-resize-handle--tr {
+    top: 0;
+    left: 100%;
+    cursor: nesw-resize;
+}
+
+.canvas-resize-handle--bl {
+    top: 100%;
+    left: 0;
+    cursor: nesw-resize;
+}
+
+.canvas-resize-handle--br {
+    top: 100%;
+    left: 100%;
+    cursor: nwse-resize;
+}

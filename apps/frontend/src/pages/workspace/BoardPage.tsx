@@ -111,7 +111,10 @@ const BoardPage: React.FC = () => {
                 setBoard(res);
                 setBoardTitle(res.title);
             })
-            .catch(err => console.error("Failed to fetch board metadata:", err));
+            .catch(err => {
+                console.error("Failed to fetch board metadata:", err);
+                navigate("/dashboard");
+            });
 
         threadApi.getThreads(boardId)
             .then(res => setThreads(res))
@@ -603,7 +606,8 @@ const BoardPage: React.FC = () => {
     }, [selectedIds, deleteElement, emitElementDelete]);
 
     const handleMouseMove = (e: React.MouseEvent) => {
-        emitCursorMove(e.clientX, e.clientY);
+        const coords = screenToCanvas(e.clientX, e.clientY);
+        emitCursorMove(coords.x, coords.y);
     };
 
     if (loading) {

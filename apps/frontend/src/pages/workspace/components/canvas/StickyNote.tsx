@@ -34,6 +34,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                 fontFamily:
                     element.appearance.fontFamily || "inherit",
                 fontSize: element.appearance.fontSize || 14,
+                width: "100%",
+                height: "100%",
+                minWidth: "unset",
+                maxWidth: "unset",
+                minHeight: "unset",
+                boxSizing: "border-box",
             }}
             onMouseDown={isEditing ? undefined : onMouseDown}
         >
