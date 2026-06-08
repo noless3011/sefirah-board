@@ -7,6 +7,8 @@ interface StickyNoteProps {
     isSelected: boolean;
     onMouseDown: (e: React.MouseEvent) => void;
     hasThread?: boolean;
+    isEditing: boolean;
+    onEditComplete: (content: string) => void;
 }
 
 const StickyNote: React.FC<StickyNoteProps> = ({
@@ -14,6 +16,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     isSelected,
     onMouseDown,
     hasThread,
+    isEditing,
+    onEditComplete,
 }) => {
     const bgColor = element.appearance.fillColor || "#f5a623";
 
@@ -31,7 +35,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                     element.appearance.fontFamily || "inherit",
                 fontSize: element.appearance.fontSize || 14,
             }}
-            onMouseDown={onMouseDown}
+            onMouseDown={isEditing ? undefined : onMouseDown}
         >
             {hasThread && (
                 <div className="sticky-note__comment-badge">
@@ -45,7 +49,37 @@ const StickyNote: React.FC<StickyNoteProps> = ({
                     </svg>
                 </div>
             )}
-            <div className="sticky-note__content">{element.content}</div>
+            {isEditing ? (
+                <textarea
+                    className="sticky-note__textarea-input"
+                    style={{
+                        width: "100%",
+                        height: "100%",
+                        border: "none",
+                        outline: "none",
+                        background: "transparent",
+                        color: textColor,
+                        resize: "none",
+                        fontFamily: "inherit",
+                        fontSize: "inherit",
+                        padding: 0,
+                        margin: 0,
+                    }}
+                    defaultValue={element.content}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onBlur={(e) => onEditComplete(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            onEditComplete(e.currentTarget.value);
+                        }
+                    }}
+                    autoFocus
+                    onFocus={(e) => e.target.select()}
+                />
+            ) : (
+                <div className="sticky-note__content">{element.content}</div>
+            )}
         </div>
     );
 };
