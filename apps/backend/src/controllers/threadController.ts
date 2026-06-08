@@ -9,6 +9,7 @@ import {
 import db from "../utils/db.js";
 import { AppError } from "../utils/AppError.js";
 import { createNotification } from "../utils/notification.js";
+import { broadcastToBoard } from "../sockets/workspace.js";
 import {
     parseBody,
     getAuthenticatedUserId,
@@ -198,7 +199,10 @@ export const createThread = async (
 
         await Promise.all(notificationPromises);
 
-        res.status(201).json(serializeThread(thread));
+        const serialized = serializeThread(thread);
+        broadcastToBoard(boardId, "thread-created", { thread: serialized });
+
+        res.status(201).json(serialized);
     } catch (error) {
         next(error);
     }
@@ -281,7 +285,10 @@ export const replyToThread = async (
 
         await Promise.all(notificationPromises);
 
-        res.status(201).json(serializeReply(reply));
+        const serialized = serializeReply(reply);
+        broadcastToBoard(boardId, "reply-created", { threadId, reply: serialized });
+
+        res.status(201).json(serialized);
     } catch (error) {
         next(error);
     }
@@ -325,7 +332,10 @@ export const updateThread = async (
             },
         });
 
-        res.status(200).json(serializeThread(updatedThread));
+        const serialized = serializeThread(updatedThread);
+        broadcastToBoard(boardId, "thread-updated", { thread: serialized });
+
+        res.status(200).json(serialized);
     } catch (error) {
         next(error);
     }

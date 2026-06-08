@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { disconnectWorkspace } from "../../socket/socketClient";
-import { boardApi } from "../../api/board.api";
+import { boardApi, collaborationApi } from "../../api/board.api";
+import { notificationApi } from "../../api/notification.api";
+import { useSocket } from "../../socket/SocketProvider";
+import type { Notification } from "@sefirah/shared";
+
 interface UserProfile {
+    id: string;
     fullName: string;
     email: string;
     avatarUrl: string | null;
@@ -14,6 +19,13 @@ const DashboardLayout: React.FC = () => {
     const [user, setUser] = useState<UserProfile | null>(null);
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
+
+    // Notifications state
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [showNotifications, setShowNotifications] = useState(false);
+
+    const socket = useSocket();
 
     const handleCreateBoard = async () => {
         setIsCreating(true);
@@ -43,6 +55,7 @@ const DashboardLayout: React.FC = () => {
                     setUser(json.data || json);
                 } else {
                     setUser({
+                        id: "",
                         fullName: "User",
                         email: "user@example.com",
                         avatarUrl: null
@@ -51,14 +64,101 @@ const DashboardLayout: React.FC = () => {
             } catch (err) {
                 // Fallback khi offline / backend chưa xong
                 setUser({
+                    id: "",
                     fullName: "Cộng Tác Viên",
                     email: "member@sefirah.board",
                     avatarUrl: null
                 });
             }
         };
+
+        const fetchNotifications = async () => {
+            const token = localStorage.getItem("access_token");
+            if (!token) return;
+            try {
+                const countRes = await notificationApi.getUnreadCount();
+                setUnreadCount(countRes.unreadCount);
+
+                const notifRes = await notificationApi.getNotifications({ limit: 10 });
+                setNotifications(notifRes.data);
+            } catch (err) {
+                console.error("Failed to fetch notifications:", err);
+            }
+        };
+
         fetchUser();
+        fetchNotifications();
     }, []);
+
+    // Listen to real-time socket notification events
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNewNotification = (notif: Notification) => {
+            setNotifications((prev) => [notif, ...prev.slice(0, 9)]);
+            setUnreadCount((count) => count + 1);
+        };
+
+        socket.on("notification", handleNewNotification);
+
+        return () => {
+            socket.off("notification", handleNewNotification);
+        };
+    }, [socket]);
+
+    const handleMarkAsRead = async (notificationId: string) => {
+        try {
+            await notificationApi.markAsRead(notificationId, true);
+            setNotifications((prev) =>
+                prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
+            );
+            setUnreadCount((count) => Math.max(0, count - 1));
+        } catch (err) {
+            console.error("Failed to mark notification as read:", err);
+        }
+    };
+
+    const handleMarkAllAsRead = async () => {
+        try {
+            await notificationApi.markAllAsRead();
+            setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+            setUnreadCount(0);
+        } catch (err) {
+            console.error("Failed to mark all notifications as read:", err);
+        }
+    };
+
+    const handleAcceptInvite = async (notification: Notification) => {
+        if (!notification.boardId) return;
+        try {
+            await notificationApi.markAsRead(notification.id, true);
+            setNotifications((prev) =>
+                prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
+            );
+            setUnreadCount((count) => Math.max(0, count - 1));
+            setShowNotifications(false);
+            navigate(`/board/${notification.boardId}`);
+        } catch (err) {
+            console.error("Failed to accept invite:", err);
+            alert("Failed to accept invitation.");
+        }
+    };
+
+    const handleDeclineInvite = async (notification: Notification) => {
+        if (!notification.boardId || !user?.id) return;
+        try {
+            await collaborationApi.removeCollaborator(notification.boardId, user.id);
+            await notificationApi.deleteNotification(notification.id);
+            setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
+            if (!notification.isRead) {
+                setUnreadCount((count) => Math.max(0, count - 1));
+            }
+            alert("Invitation declined.");
+        } catch (err: any) {
+            console.error("Failed to decline invite:", err);
+            alert(err.response?.data?.message || "Failed to decline invitation.");
+        }
+    };
 
     const handleLogout = () => {
         localStorage.removeItem("access_token");
@@ -148,11 +248,98 @@ const DashboardLayout: React.FC = () => {
                     <div className="flex items-center gap-3">
                         
                         {/* Notifications Bell */}
-                        <button className="relative rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition">
-                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9m7.73 13a2 2 0 0 1-3.46 0" />
-                            </svg>
-                        </button>
+                        <div className="relative">
+                            <button 
+                                onClick={() => setShowNotifications(!showNotifications)}
+                                className={`relative rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition ${showNotifications ? "bg-slate-100 text-slate-800" : ""}`}
+                            >
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9m7.73 13a2 2 0 0 1-3.46 0" />
+                                </svg>
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
+                                        {unreadCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* Notifications Dropdown */}
+                            {showNotifications && (
+                                <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                                    <div className="absolute right-0 mt-2 w-80 rounded-xl border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 z-50 overflow-hidden">
+                                        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
+                                            <span className="font-semibold text-slate-800 text-sm">Notifications</span>
+                                            {unreadCount > 0 && (
+                                                <button
+                                                    onClick={handleMarkAllAsRead}
+                                                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                                                >
+                                                    Mark all as read
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                                            {notifications.length === 0 ? (
+                                                <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                                                    <span className="text-2xl">🎉</span>
+                                                    <p className="text-xs text-slate-400 mt-1 font-medium">All caught up!</p>
+                                                </div>
+                                            ) : (
+                                                notifications.map((notif) => (
+                                                    <div
+                                                        key={notif.id}
+                                                        className={`flex flex-col gap-2 p-3 transition hover:bg-slate-50/70 text-left ${notif.isRead ? "opacity-75" : "bg-blue-50/20"}`}
+                                                    >
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <p
+                                                                className={`text-xs text-slate-700 leading-normal ${notif.isRead ? "font-normal" : "font-semibold"}`}
+                                                            >
+                                                                {notif.message}
+                                                            </p>
+                                                            {!notif.isRead && (
+                                                                <span className="h-2 w-2 mt-1 rounded-full bg-blue-500 flex-shrink-0" />
+                                                            )}
+                                                        </div>
+
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[10px] text-slate-400">
+                                                                {new Date(notif.createdAt).toLocaleDateString()}
+                                                            </span>
+                                                            {!notif.isRead && (
+                                                                <button
+                                                                    onClick={() => handleMarkAsRead(notif.id)}
+                                                                    className="text-[10px] text-blue-600 hover:text-blue-700 font-medium"
+                                                                >
+                                                                    Mark read
+                                                                </button>
+                                                            )}
+                                                        </div>
+
+                                                        {notif.type === "invite" && !notif.isRead && (
+                                                            <div className="flex gap-2 mt-1">
+                                                                <button
+                                                                    onClick={() => handleAcceptInvite(notif)}
+                                                                    className="flex-1 rounded bg-green-600 py-1 text-center text-xs font-semibold text-white hover:bg-green-700 transition"
+                                                                >
+                                                                    Accept
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDeclineInvite(notif)}
+                                                                    className="flex-1 rounded bg-slate-200 py-1 text-center text-xs font-semibold text-slate-700 hover:bg-slate-300 transition"
+                                                                >
+                                                                    Decline
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
 
                         {/* Settings Button */}
                         <button 

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import type { CanvasElementAppearance, Thread, CanvasElement } from "@sefirah/shared";
+import type { CanvasElementAppearance, Thread, CanvasElement, Board } from "@sefirah/shared";
 
 
 // Components
 import TopToolbar from "./components/TopToolbar";
+import ShareModal from "./components/ShareModal";
 import LeftToolbar from "./components/LeftToolbar";
 import RightPanel from "./components/RightPanel";
 import ChatPanel from "./components/ChatPanel";
@@ -17,6 +18,7 @@ import { useCanvasElements } from "./hooks/useCanvasElements";
 import { useCollaboration } from "./hooks/useCollaboration";
 import { useCanvas } from "./hooks/useCanvas";
 import { boardApi, threadApi } from "../../api/board.api";
+import { useSocket } from "../../socket/SocketProvider";
 
 import "./BoardPage.css";
 
@@ -25,9 +27,13 @@ const BoardPage: React.FC = () => {
     const navigate = useNavigate();
 
 
+    const [board, setBoard] = useState<Board | null>(null);
     const [boardTitle, setBoardTitle] = useState("Loading...");
     const [activeTab, setActiveTab] = useState<"properties" | "chat">("properties");
     const [threads, setThreads] = useState<Thread[]>([]);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+    const socket = useSocket();
     
     // Custom Hooks
     const {
@@ -73,13 +79,54 @@ const BoardPage: React.FC = () => {
         }
 
         boardApi.getBoard(boardId)
-            .then(res => setBoardTitle(res.title))
+            .then(res => {
+                setBoard(res);
+                setBoardTitle(res.title);
+            })
             .catch(err => console.error("Failed to fetch board metadata:", err));
 
         threadApi.getThreads(boardId)
             .then(res => setThreads(res))
             .catch(err => console.error("Failed to fetch threads:", err));
     }, [boardId, navigate]);
+
+    // Listen to real-time thread socket events
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleThreadCreated = (data: { thread: Thread }) => {
+            setThreads((prev) => {
+                if (prev.some((t) => t.id === data.thread.id)) return prev;
+                return [...prev, data.thread];
+            });
+        };
+
+        const handleReplyCreated = (data: { threadId: string; reply: any }) => {
+            setThreads((prev) =>
+                prev.map((t) =>
+                    t.id === data.threadId
+                        ? { ...t, replies: [...(t.replies || []), data.reply] }
+                        : t
+                )
+            );
+        };
+
+        const handleThreadUpdated = (data: { thread: Thread }) => {
+            setThreads((prev) =>
+                prev.map((t) => (t.id === data.thread.id ? data.thread : t))
+            );
+        };
+
+        socket.on("thread-created", handleThreadCreated);
+        socket.on("reply-created", handleReplyCreated);
+        socket.on("thread-updated", handleThreadUpdated);
+
+        return () => {
+            socket.off("thread-created", handleThreadCreated);
+            socket.off("reply-created", handleReplyCreated);
+            socket.off("thread-updated", handleThreadUpdated);
+        };
+    }, [socket]);
 
     const handleTitleChange = async (newTitle: string) => {
         setBoardTitle(newTitle);
@@ -182,7 +229,7 @@ const BoardPage: React.FC = () => {
                 onRedo={redo}
                 collaborators={onlineUsers}
                 onExport={() => boardApi.exportBoard(boardId!, "png").then(() => alert(`Export started! Download URL will be available shortly.`))}
-                onShare={() => alert("Share dialog would open here")}
+                onShare={() => setIsShareModalOpen(true)}
             />
 
             <LeftToolbar
@@ -244,6 +291,14 @@ const BoardPage: React.FC = () => {
                     onZoomOut={zoomOut}
                 />
             </div>
+
+            {isShareModalOpen && board && (
+                <ShareModal
+                    boardId={boardId!}
+                    ownerId={board.ownerId}
+                    onClose={() => setIsShareModalOpen(false)}
+                />
+            )}
         </div>
     );
 };
