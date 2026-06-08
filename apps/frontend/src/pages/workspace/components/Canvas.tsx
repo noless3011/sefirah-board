@@ -21,6 +21,8 @@ interface CanvasProps {
     activeTool: ToolType;
     setActiveTool: (tool: ToolType) => void;
     onAddElement: (element: CanvasElement) => void;
+    penColor?: string;
+    penWidth?: number;
 }
 
 const Canvas: React.FC<CanvasProps> = ({
@@ -34,7 +36,9 @@ const Canvas: React.FC<CanvasProps> = ({
     onCanvasClick,
     activeTool,
     setActiveTool,
-    onAddElement
+    onAddElement,
+    penColor = "#4285f4",
+    penWidth = 3,
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [editingElementId, setEditingElementId] = useState<string | null>(null);
@@ -211,8 +215,8 @@ const Canvas: React.FC<CanvasProps> = ({
                     zIndex: baseZIndex + 1,
                     isLocked: false,
                     appearance: {
-                        strokeColor: "#4285f4",
-                        strokeWidth: 3,
+                        strokeColor: penColor,
+                        strokeWidth: penWidth,
                     },
                     createdBy: null,
                     createdAt: new Date().toISOString(),

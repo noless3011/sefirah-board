@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
 import type { CanvasElement, CanvasElementAppearance, Thread } from "@sefirah/shared";
+import type { ToolType } from "../types/canvas.types";
 import "./RightPanel.css";
 
 interface RightPanelProps {
@@ -12,6 +13,11 @@ interface RightPanelProps {
     onThreadClick: (threadId: string) => void;
     chatContent: React.ReactNode;
     minimapContent: React.ReactNode;
+    activeTool?: ToolType;
+    penColor?: string;
+    onPenColorChange?: (color: string) => void;
+    penWidth?: number;
+    onPenWidthChange?: (width: number) => void;
 }
 
 const PRESET_COLORS = [
@@ -72,13 +78,14 @@ const EmptyState: React.FC = () => (
 );
 
 interface ColorPickerProps {
+    label?: string;
     currentColor: string | undefined;
     onChange: (color: string) => void;
 }
 
-const ColorPicker: React.FC<ColorPickerProps> = ({ currentColor, onChange }) => (
+const ColorPicker: React.FC<ColorPickerProps> = ({ label = "Fill Color", currentColor, onChange }) => (
     <div className="right-panel__prop-row">
-        <span className="right-panel__prop-label">Fill Color</span>
+        <span className="right-panel__prop-label">{label}</span>
         <div className="right-panel__colors">
             {PRESET_COLORS.map((color) => (
                 <button
@@ -106,23 +113,24 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ currentColor, onChange }) => 
 );
 
 interface BorderWidthSliderProps {
+    label?: string;
     value: number;
     onChange: (width: number) => void;
 }
 
-const BorderWidthSlider: React.FC<BorderWidthSliderProps> = ({ value, onChange }) => (
+const BorderWidthSlider: React.FC<BorderWidthSliderProps> = ({ label = "Border Width", value, onChange }) => (
     <div className="right-panel__prop-row">
-        <span className="right-panel__prop-label">Border Width</span>
+        <span className="right-panel__prop-label">{label}</span>
         <div className="right-panel__slider-row">
             <input
                 className="right-panel__slider"
                 type="range"
                 min={0}
-                max={10}
+                max={15}
                 step={1}
                 value={value}
                 onChange={(e) => onChange(Number(e.target.value))}
-                aria-label="Border width"
+                aria-label={label}
             />
             <span className="right-panel__slider-value">{value}px</span>
         </div>
@@ -216,6 +224,11 @@ const RightPanel: React.FC<RightPanelProps> = ({
     onThreadClick,
     chatContent,
     minimapContent,
+    activeTool,
+    penColor = "#4285f4",
+    onPenColorChange,
+    penWidth = 3,
+    onPenWidthChange,
 }) => {
     const appearance = selectedElement?.appearance;
 
@@ -234,6 +247,11 @@ const RightPanel: React.FC<RightPanelProps> = ({
             onAppearanceChange({ fontFamily, fontWeight }),
         [onAppearanceChange],
     );
+
+    const isLineElement = selectedElement && ["line", "arrow", "connector"].includes(selectedElement.type);
+    const isTextElement = selectedElement?.type === "text";
+    const isStickyElement = selectedElement?.type === "sticky-note";
+    const isCardElement = selectedElement && ["service-card", "database-card"].includes(selectedElement.type);
 
     return (
         <aside className="right-panel">
@@ -264,25 +282,103 @@ const RightPanel: React.FC<RightPanelProps> = ({
                 <>
                     <div className="right-panel__content">
                         {selectedElement == null ? (
-                            <EmptyState />
+                            activeTool === "pen" ? (
+                                <div className="right-panel__properties">
+                                    <div className="right-panel__section">
+                                        <h3 className="right-panel__section-header">Pen Tool Settings</h3>
+                                        <ColorPicker
+                                            label="Pen Color"
+                                            currentColor={penColor}
+                                            onChange={onPenColorChange || (() => {})}
+                                        />
+                                        <BorderWidthSlider
+                                            label="Pen Width"
+                                            value={penWidth}
+                                            onChange={onPenWidthChange || (() => {})}
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <EmptyState />
+                            )
                         ) : (
                             <div className="right-panel__properties">
                                 {/* Appearance section */}
                                 <div className="right-panel__section">
                                     <h3 className="right-panel__section-header">Appearance</h3>
-                                    <ColorPicker
-                                        currentColor={appearance?.fillColor}
-                                        onChange={handleFillColorChange}
-                                    />
-                                    <BorderWidthSlider
-                                        value={appearance?.strokeWidth ?? 2}
-                                        onChange={handleStrokeWidthChange}
-                                    />
-                                    <TypographySelect
-                                        currentFont={appearance?.fontFamily}
-                                        currentWeight={appearance?.fontWeight}
-                                        onChange={handleTypographyChange}
-                                    />
+                                    {isLineElement && (
+                                        <>
+                                            <ColorPicker
+                                                label="Line Color"
+                                                currentColor={appearance?.strokeColor || "#4285f4"}
+                                                onChange={(color) => onAppearanceChange({ strokeColor: color })}
+                                            />
+                                            <BorderWidthSlider
+                                                label="Line Width"
+                                                value={appearance?.strokeWidth ?? 2}
+                                                onChange={handleStrokeWidthChange}
+                                            />
+                                        </>
+                                    )}
+                                    {isTextElement && (
+                                        <>
+                                            <ColorPicker
+                                                label="Text Color"
+                                                currentColor={appearance?.fillColor || "#1a1a2e"}
+                                                onChange={handleFillColorChange}
+                                            />
+                                            <TypographySelect
+                                                currentFont={appearance?.fontFamily}
+                                                currentWeight={appearance?.fontWeight}
+                                                onChange={handleTypographyChange}
+                                            />
+                                        </>
+                                    )}
+                                    {isStickyElement && (
+                                        <>
+                                            <ColorPicker
+                                                label="Fill Color"
+                                                currentColor={appearance?.fillColor || "#f5a623"}
+                                                onChange={handleFillColorChange}
+                                            />
+                                            <TypographySelect
+                                                currentFont={appearance?.fontFamily}
+                                                currentWeight={appearance?.fontWeight}
+                                                onChange={handleTypographyChange}
+                                            />
+                                        </>
+                                    )}
+                                    {isCardElement && (
+                                        <>
+                                            <ColorPicker
+                                                label="Card Color"
+                                                currentColor={appearance?.fillColor || "#ffffff"}
+                                                onChange={handleFillColorChange}
+                                            />
+                                            <BorderWidthSlider
+                                                label="Border Width"
+                                                value={appearance?.strokeWidth ?? 4}
+                                                onChange={handleStrokeWidthChange}
+                                            />
+                                        </>
+                                    )}
+                                    {!isLineElement && !isTextElement && !isStickyElement && !isCardElement && (
+                                        <>
+                                            <ColorPicker
+                                                currentColor={appearance?.fillColor}
+                                                onChange={handleFillColorChange}
+                                            />
+                                            <BorderWidthSlider
+                                                value={appearance?.strokeWidth ?? 2}
+                                                onChange={handleStrokeWidthChange}
+                                            />
+                                            <TypographySelect
+                                                currentFont={appearance?.fontFamily}
+                                                currentWeight={appearance?.fontWeight}
+                                                onChange={handleTypographyChange}
+                                            />
+                                        </>
+                                    )}
                                 </div>
 
                                 {/* Details section based on element type */}

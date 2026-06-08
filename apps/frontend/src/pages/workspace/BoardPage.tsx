@@ -32,6 +32,8 @@ const BoardPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<"properties" | "chat">("properties");
     const [threads, setThreads] = useState<Thread[]>([]);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [penColor, setPenColor] = useState("#4285f4");
+    const [penWidth, setPenWidth] = useState(3);
 
     const socket = useSocket();
     
@@ -254,6 +256,8 @@ const BoardPage: React.FC = () => {
                     activeTool={activeTool}
                     setActiveTool={setActiveTool}
                     onAddElement={handleAddElementDirect}
+                    penColor={penColor}
+                    penWidth={penWidth}
                 />
             </div>
 
@@ -281,6 +285,11 @@ const BoardPage: React.FC = () => {
                             onViewportChange={(x, y) => setViewport({ ...viewport, x, y })}
                         />
                     }
+                    activeTool={activeTool}
+                    penColor={penColor}
+                    onPenColorChange={setPenColor}
+                    penWidth={penWidth}
+                    onPenWidthChange={setPenWidth}
                 />
             </div>
 
