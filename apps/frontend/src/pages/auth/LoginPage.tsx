@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { authApi } from "../../api/auth.api";
 
 const LoginPage = () => {
@@ -10,6 +10,8 @@ const LoginPage = () => {
     });
     const [error, setError] = useState("");
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const redirectUrl = searchParams.get("redirect") || "/dashboard";
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,7 +24,7 @@ const LoginPage = () => {
             localStorage.setItem("refresh_token", refreshToken);
             localStorage.setItem("isLoggedIn", "true");
 
-            navigate("/dashboard");
+            navigate(redirectUrl);
         } catch (err: any) {
             setError(
                 err.response?.data?.message ||
@@ -97,7 +99,7 @@ const LoginPage = () => {
                 <p className="mt-6 text-center text-sm text-gray-600">
                     Chưa có tài khoản?{" "}
                     <Link
-                        to="/register"
+                        to={redirectUrl !== "/dashboard" ? `/register?redirect=${encodeURIComponent(redirectUrl)}` : "/register"}
                         className="font-semibold text-blue-600 hover:underline"
                     >
                         Đăng ký ngay

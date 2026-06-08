@@ -7,6 +7,7 @@ import type {
     ThreadReply,
     BoardRevision,
     CanvasElement,
+    RedeemInviteResponse,
 } from "@sefirah/shared";
 
 export const boardApi = {
@@ -149,5 +150,11 @@ export const collaborationApi = {
     removeCollaborator: (boardId: string, userId: string) =>
         axiosClient
             .delete(`/boards/${boardId}/collaborators/${userId}`)
+            .then((r) => r.data),
+
+    /** POST /invites/redeem — Redeem invite code and join board */
+    redeemInvite: (inviteCode: string) =>
+        axiosClient
+            .post<RedeemInviteResponse>(`/invites/redeem`, { inviteCode })
             .then((r) => r.data),
 };
