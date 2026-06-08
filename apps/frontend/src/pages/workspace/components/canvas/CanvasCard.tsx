@@ -56,6 +56,11 @@ const CanvasCard: React.FC<CanvasCardProps> = ({
                 backgroundColor:
                     element.appearance.fillColor || "#ffffff",
                 cursor: isEditing ? "default" : "grab",
+                width: "100%",
+                height: "100%",
+                minWidth: "unset",
+                maxWidth: "unset",
+                boxSizing: "border-box",
             }}
             onMouseDown={isEditing ? undefined : onMouseDown}
         >

@@ -120,6 +120,18 @@ const Canvas: React.FC<CanvasProps> = ({
     const draggingRef = useRef<{ id: string; startX: number; startY: number; initialX: number; initialY: number } | null>(null);
     const initialPointsRef = useRef<{ x: number; y: number }[] | null>(null);
     
+    // Handle element resizing
+    const resizingRef = useRef<{
+        id: string;
+        handle: "tl" | "tr" | "bl" | "br";
+        startX: number;
+        startY: number;
+        initialX: number;
+        initialY: number;
+        initialWidth: number;
+        initialHeight: number;
+    } | null>(null);
+    
     // Tracking state for drawing & connections
     const firstConnectElementIdRef = useRef<string | null>(null);
     const isDrawingRef = useRef(false);
@@ -190,9 +202,71 @@ const Canvas: React.FC<CanvasProps> = ({
         }
     };
 
+    const handleResizeStart = (e: React.MouseEvent, el: CanvasElement, handle: "tl" | "tr" | "bl" | "br") => {
+        e.stopPropagation();
+        e.preventDefault();
+        resizingRef.current = {
+            id: el.id,
+            handle,
+            startX: e.clientX,
+            startY: e.clientY,
+            initialX: el.x,
+            initialY: el.y,
+            initialWidth: el.width,
+            initialHeight: el.height,
+        };
+    };
+
     const handleMouseMove = (e: React.MouseEvent) => {
         if (isPanning) {
             movePan(e);
+            return;
+        }
+
+        if (resizingRef.current) {
+            const { id, handle, startX, startY, initialX, initialY, initialWidth, initialHeight } = resizingRef.current;
+            const dx = (e.clientX - startX) / viewport.zoom;
+            const dy = (e.clientY - startY) / viewport.zoom;
+
+            let newX = initialX;
+            let newY = initialY;
+            let newWidth = initialWidth;
+            let newHeight = initialHeight;
+
+            const minSize = 30; // Minimum size for elements
+
+            if (handle === "br") {
+                newWidth = Math.max(initialWidth + dx, minSize);
+                newHeight = Math.max(initialHeight + dy, minSize);
+            } else if (handle === "bl") {
+                const maxDx = initialWidth - minSize;
+                const actualDx = Math.min(dx, maxDx);
+                newX = initialX + actualDx;
+                newWidth = initialWidth - actualDx;
+                newHeight = Math.max(initialHeight + dy, minSize);
+            } else if (handle === "tr") {
+                const maxDy = initialHeight - minSize;
+                const actualDy = Math.min(dy, maxDy);
+                newY = initialY + actualDy;
+                newWidth = Math.max(initialWidth + dx, minSize);
+                newHeight = initialHeight - actualDy;
+            } else if (handle === "tl") {
+                const maxDx = initialWidth - minSize;
+                const actualDx = Math.min(dx, maxDx);
+                const maxDy = initialHeight - minSize;
+                const actualDy = Math.min(dy, maxDy);
+                newX = initialX + actualDx;
+                newY = initialY + actualDy;
+                newWidth = initialWidth - actualDx;
+                newHeight = initialHeight - actualDy;
+            }
+
+            onUpdateElement(id, {
+                x: newX,
+                y: newY,
+                width: newWidth,
+                height: newHeight,
+            });
             return;
         }
 
@@ -244,6 +318,7 @@ const Canvas: React.FC<CanvasProps> = ({
         }
         draggingRef.current = null;
         initialPointsRef.current = null;
+        resizingRef.current = null;
     };
 
     const handleContainerMouseDown = (e: React.MouseEvent) => {
@@ -526,6 +601,50 @@ const Canvas: React.FC<CanvasProps> = ({
 
                 {/* Nodes */}
                 {nodes.map(renderElement)}
+
+                {/* Bounding box selection handles */}
+                {(() => {
+                    if (selectedIds.length !== 1) return null;
+                    const selectedId = selectedIds[0];
+                    const selectedEl = elements.find((el) => el.id === selectedId);
+                    if (!selectedEl || ["line", "arrow", "connector"].includes(selectedEl.type)) return null;
+
+                    return (
+                        <div
+                            className="canvas-selection-bbox"
+                            style={{
+                                position: "absolute",
+                                left: selectedEl.x,
+                                top: selectedEl.y,
+                                width: selectedEl.width,
+                                height: selectedEl.height,
+                                zIndex: selectedEl.zIndex + 1,
+                                pointerEvents: "none",
+                            }}
+                        >
+                            <div
+                                className="canvas-resize-handle canvas-resize-handle--tl"
+                                style={{ pointerEvents: "auto" }}
+                                onMouseDown={(e) => handleResizeStart(e, selectedEl, "tl")}
+                            />
+                            <div
+                                className="canvas-resize-handle canvas-resize-handle--tr"
+                                style={{ pointerEvents: "auto" }}
+                                onMouseDown={(e) => handleResizeStart(e, selectedEl, "tr")}
+                            />
+                            <div
+                                className="canvas-resize-handle canvas-resize-handle--bl"
+                                style={{ pointerEvents: "auto" }}
+                                onMouseDown={(e) => handleResizeStart(e, selectedEl, "bl")}
+                            />
+                            <div
+                                className="canvas-resize-handle canvas-resize-handle--br"
+                                style={{ pointerEvents: "auto" }}
+                                onMouseDown={(e) => handleResizeStart(e, selectedEl, "br")}
+                            />
+                        </div>
+                    );
+                })()}
 
                 {/* Collaborator Cursors */}
                 {collaboratorCursors.map((cursor) => (

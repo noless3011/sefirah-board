@@ -30,6 +30,9 @@ const TextElement: React.FC<TextElementProps> = ({
                 border: element.appearance.dashed ? `1.5px dashed ${element.appearance.fillColor || "#1a1a2e"}` : "1.5px solid transparent",
                 textAlign: element.appearance.textAlign || "left",
                 cursor: isEditing ? "text" : "grab",
+                width: "100%",
+                height: "100%",
+                boxSizing: "border-box",
             }}
             onMouseDown={isEditing ? undefined : onMouseDown}
         >

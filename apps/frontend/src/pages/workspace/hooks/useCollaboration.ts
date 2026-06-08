@@ -53,9 +53,15 @@ export function useCollaboration(
 
     // Join the board room
     useEffect(() => {
-        if (!socket.connected) return;
+        const joinRoom = () => {
+            socket.emit("join-room", { boardId });
+        };
 
-        socket.emit("join-room", { boardId });
+        if (socket.connected) {
+            joinRoom();
+        }
+
+        socket.on("connect", joinRoom);
 
         const handleUserJoined = (data: {
             user: { userId: string; fullName: string; avatarUrl?: string };
@@ -123,6 +129,7 @@ export function useCollaboration(
         socket.on("element-deleted", handleElementDeleted);
 
         return () => {
+            socket.off("connect", joinRoom);
             socket.off("user-joined", handleUserJoined);
             socket.off("user-left", handleUserLeft);
             socket.off("cursor-moved", handleCursorMoved);
