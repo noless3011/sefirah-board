@@ -413,7 +413,10 @@ const BoardCard: React.FC<BoardCardProps> = ({
             onClick={() => navigate(`/board/${board.id}`)}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
-            style={tiltStyle}
+            style={{
+                ...tiltStyle,
+                zIndex: activeMenuId === board.id ? 50 : tiltStyle.zIndex
+            }}
             className="bg-white border border-slate-100 rounded-2xl flex flex-col cursor-pointer group relative transform-gpu"
         >
             {/* Card Header Badge Overlay */}
@@ -839,7 +842,7 @@ const DashboardPage: React.FC = () => {
                     {boards.map((board) => (
                         <div 
                             key={board.id} 
-                            className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:shadow-sm transition-shadow duration-200 cursor-pointer group"
+                            className={`flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:shadow-sm transition-shadow duration-200 cursor-pointer group relative ${activeMenuId === board.id ? 'z-20' : 'z-0'}`}
                             onClick={() => navigate(`/board/${board.id}`)}
                         >
                             <div className="flex items-center gap-4 min-w-0 flex-1">
