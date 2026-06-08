@@ -488,6 +488,9 @@ export const CanvasElementAppearanceSchema = z.object({
     fontWeight: FontWeightSchema.optional(),
     textAlign: TextAlignSchema.optional(),
     borderRadius: z.number().nonnegative().optional(),
+    italic: z.boolean().optional(),
+    underline: z.boolean().optional(),
+    dashed: z.boolean().optional(),
 });
 export type CanvasElementAppearance = z.infer<
     typeof CanvasElementAppearanceSchema

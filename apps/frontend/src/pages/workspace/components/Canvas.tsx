@@ -1,7 +1,6 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import type { CanvasElement } from "@sefirah/shared";
 import type { CollaboratorCursorInfo, ToolType } from "../types/canvas.types";
-import { useCanvas } from "../hooks/useCanvas";
 import CanvasCard from "./canvas/CanvasCard";
 import StickyNote from "./canvas/StickyNote";
 import TextElement from "./canvas/TextElement";
@@ -15,12 +14,22 @@ interface CanvasProps {
     onSelect: (id: string | null, addToSelection?: boolean) => void;
     onUpdateElement: (id: string, changes: Partial<CanvasElement>) => void;
     collaboratorCursors: CollaboratorCursorInfo[];
-    viewport: ReturnType<typeof useCanvas>["viewport"];
-    setViewport: ReturnType<typeof useCanvas>["setViewport"];
+    viewport: { x: number; y: number; zoom: number };
+    setViewport: React.Dispatch<React.SetStateAction<{ x: number; y: number; zoom: number }>>;
     onCanvasClick?: () => void;
     activeTool: ToolType;
     setActiveTool: (tool: ToolType) => void;
     onAddElement: (element: CanvasElement) => void;
+    penColor?: string;
+    penWidth?: number;
+    canvasBgColor?: string;
+    canvasGridStyle?: "dots" | "lines" | "none";
+    canvasRef: React.RefObject<HTMLDivElement | null>;
+    startPan: (e: React.MouseEvent) => void;
+    movePan: (e: React.MouseEvent) => void;
+    endPan: () => void;
+    isPanning: boolean;
+    screenToCanvas: (screenX: number, screenY: number) => { x: number; y: number };
 }
 
 const Canvas: React.FC<CanvasProps> = ({
@@ -34,9 +43,18 @@ const Canvas: React.FC<CanvasProps> = ({
     onCanvasClick,
     activeTool,
     setActiveTool,
-    onAddElement
+    onAddElement,
+    penColor = "#4285f4",
+    penWidth = 3,
+    canvasBgColor = "#f8f9fa",
+    canvasGridStyle = "dots",
+    canvasRef,
+    startPan,
+    movePan,
+    endPan,
+    isPanning,
+    screenToCanvas,
 }) => {
-    const containerRef = useRef<HTMLDivElement>(null);
     const [editingElementId, setEditingElementId] = useState<string | null>(null);
 
     const handleElementDoubleClick = (e: React.MouseEvent, id: string) => {
@@ -46,12 +64,57 @@ const Canvas: React.FC<CanvasProps> = ({
         }
     };
 
-    const { handleWheel, startPan, movePan, endPan, isPanning, screenToCanvas } = useCanvas(containerRef);
-
-    // Sync viewport state to hook's state
+    // Sync viewport ref to avoid re-binding wheel event listener on every render
+    const viewportRef = useRef(viewport);
     useEffect(() => {
-        setViewport(viewport);
-    }, [viewport, setViewport]);
+        viewportRef.current = viewport;
+    }, [viewport]);
+
+    // Non-passive native event listener to allow scroll-to-zoom and gesture panning
+    useEffect(() => {
+        const canvasEl = canvasRef.current;
+        if (!canvasEl) return;
+
+        const onWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            const rect = canvasEl.getBoundingClientRect();
+            if (!rect) return;
+
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const v = viewportRef.current;
+
+            // Pan horizontally if scrolling horizontally (trackpads)
+            if (e.deltaX !== 0 && !e.ctrlKey && !e.metaKey) {
+                setViewport((current) => ({
+                    ...current,
+                    x: current.x - e.deltaX,
+                    y: current.y - e.deltaY,
+                }));
+                return;
+            }
+
+            // Zoom directly on vertical scroll or pinch
+            const zoomStep = e.ctrlKey || e.metaKey ? 0.05 : 0.03;
+            const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+            const newZoom = Math.min(
+                Math.max(v.zoom + delta, 0.1),
+                5
+            );
+            const scale = newZoom / v.zoom;
+
+            setViewport({
+                x: mouseX - (mouseX - v.x) * scale,
+                y: mouseY - (mouseY - v.y) * scale,
+                zoom: newZoom,
+            });
+        };
+
+        canvasEl.addEventListener("wheel", onWheel, { passive: false });
+        return () => {
+            canvasEl.removeEventListener("wheel", onWheel);
+        };
+    }, [canvasRef, setViewport]);
 
     // Handle element dragging
     const draggingRef = useRef<{ id: string; startX: number; startY: number; initialX: number; initialY: number } | null>(null);
@@ -64,7 +127,7 @@ const Canvas: React.FC<CanvasProps> = ({
     const drawingPointsRef = useRef<{ x: number; y: number }[]>([]);
 
     const handleElementMouseDown = (e: React.MouseEvent, id: string) => {
-        if (activeTool === "select" || activeTool === "connector") {
+        if (e.button === 0 && (activeTool === "select" || activeTool === "connector")) {
             e.stopPropagation();
         }
 
@@ -177,7 +240,7 @@ const Canvas: React.FC<CanvasProps> = ({
         if (activeTool === "pen" && isDrawingRef.current) {
             isDrawingRef.current = false;
             drawingLineIdRef.current = null;
-            setActiveTool("select");
+            // Keep pen tool active to allow continuous drawing of multiple strokes
         }
         draggingRef.current = null;
         initialPointsRef.current = null;
@@ -211,8 +274,8 @@ const Canvas: React.FC<CanvasProps> = ({
                     zIndex: baseZIndex + 1,
                     isLocked: false,
                     appearance: {
-                        strokeColor: "#4285f4",
-                        strokeWidth: 3,
+                        strokeColor: penColor,
+                        strokeWidth: penWidth,
                     },
                     createdBy: null,
                     createdAt: new Date().toISOString(),
@@ -405,16 +468,35 @@ const Canvas: React.FC<CanvasProps> = ({
     const lines = elements.filter(el => ['line', 'arrow', 'connector'].includes(el.type));
     const nodes = elements.filter(el => !['line', 'arrow', 'connector'].includes(el.type));
 
+    const isDarkBg = (color: string) => {
+        const hex = color.replace("#", "");
+        if (hex.length === 3 || hex.length === 6) {
+            const r = parseInt(hex.length === 3 ? hex[0]+hex[0] : hex.substring(0, 2), 16);
+            const g = parseInt(hex.length === 3 ? hex[1]+hex[1] : hex.substring(2, 4), 16);
+            const b = parseInt(hex.length === 3 ? hex[2]+hex[2] : hex.substring(4, 6), 16);
+            const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+            return yiq < 128;
+        }
+        return false;
+    };
+
+    const gridColor = isDarkBg(canvasBgColor) ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)";
+    const gridBackgroundImage = canvasGridStyle === "dots"
+        ? `radial-gradient(${gridColor} 1.5px, transparent 0)`
+        : canvasGridStyle === "lines"
+        ? `linear-gradient(to right, ${gridColor} 1px, transparent 1px), linear-gradient(to bottom, ${gridColor} 1px, transparent 1px)`
+        : "none";
+
     return (
         <div
-            ref={containerRef}
+            ref={canvasRef}
             className={`canvas-container ${isPanning ? 'canvas-container--panning' : ''}`}
-            onWheel={handleWheel}
             onMouseDown={handleContainerMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onContextMenu={(e) => e.preventDefault()}
+            style={{ backgroundColor: canvasBgColor }}
         >
             <div
                 className="canvas-surface"
@@ -423,7 +505,13 @@ const Canvas: React.FC<CanvasProps> = ({
                 }}
             >
                 {/* Background grid */}
-                <div className="canvas-grid" />
+                <div 
+                    className="canvas-grid" 
+                    style={{
+                        backgroundImage: gridBackgroundImage,
+                        backgroundSize: "20px 20px"
+                    }}
+                />
                 
                 {/* Connection lines */}
                 {lines.map((line) => (

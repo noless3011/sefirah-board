@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
 import type { CanvasElement, CanvasElementAppearance, Thread } from "@sefirah/shared";
+import type { ToolType } from "../types/canvas.types";
 import "./RightPanel.css";
 
 interface RightPanelProps {
@@ -12,6 +13,11 @@ interface RightPanelProps {
     onThreadClick: (threadId: string) => void;
     chatContent: React.ReactNode;
     minimapContent: React.ReactNode;
+    activeTool?: ToolType;
+    penColor?: string;
+    onPenColorChange?: (color: string) => void;
+    penWidth?: number;
+    onPenWidthChange?: (width: number) => void;
 }
 
 const PRESET_COLORS = [
@@ -26,6 +32,17 @@ const FONT_OPTIONS = [
     { value: "Inter", label: "Inter Medium", weight: "medium" as const },
     { value: "Inter", label: "Inter SemiBold", weight: "semibold" as const },
     { value: "Inter", label: "Inter Bold", weight: "bold" as const },
+];
+
+const FONT_SIZES = [
+    { label: "12px", value: 12 },
+    { label: "14px", value: 14 },
+    { label: "16px", value: 16 },
+    { label: "18px", value: 18 },
+    { label: "24px", value: 24 },
+    { label: "32px", value: 32 },
+    { label: "48px", value: 48 },
+    { label: "64px", value: 64 },
 ];
 
 function getInitials(name: string): string {
@@ -72,57 +89,90 @@ const EmptyState: React.FC = () => (
 );
 
 interface ColorPickerProps {
+    label?: string;
     currentColor: string | undefined;
     onChange: (color: string) => void;
 }
 
-const ColorPicker: React.FC<ColorPickerProps> = ({ currentColor, onChange }) => (
-    <div className="right-panel__prop-row">
-        <span className="right-panel__prop-label">Fill Color</span>
-        <div className="right-panel__colors">
-            {PRESET_COLORS.map((color) => (
-                <button
-                    key={color.value}
-                    className={`right-panel__color-swatch${
-                        currentColor === color.value ? " right-panel__color-swatch--selected" : ""
-                    }`}
-                    style={{ background: color.value }}
-                    onClick={() => onChange(color.value)}
-                    title={color.label}
-                    aria-label={`Set fill color to ${color.label}`}
-                    type="button"
-                />
-            ))}
-            <button
-                className="right-panel__color-add"
-                title="Custom color"
-                aria-label="Add custom color"
-                type="button"
-            >
-                +
-            </button>
+const ColorPicker: React.FC<ColorPickerProps> = ({ label = "Fill Color", currentColor, onChange }) => {
+    const colorInputRef = React.useRef<HTMLInputElement>(null);
+    const isCustomSelected = currentColor && !PRESET_COLORS.some(c => c.value === currentColor);
+
+    return (
+        <div className="right-panel__prop-row">
+            <span className="right-panel__prop-label">{label}</span>
+            <div className="right-panel__colors">
+                {PRESET_COLORS.map((color) => (
+                    <button
+                        key={color.value}
+                        className={`right-panel__color-swatch${
+                            currentColor === color.value ? " right-panel__color-swatch--selected" : ""
+                        }`}
+                        style={{ background: color.value }}
+                        onClick={() => onChange(color.value)}
+                        title={color.label}
+                        aria-label={`Set color to ${color.label}`}
+                        type="button"
+                    />
+                ))}
+                <div style={{ position: "relative", display: "inline-block" }}>
+                    <button
+                        className={`right-panel__color-add${
+                            isCustomSelected ? " right-panel__color-swatch--selected" : ""
+                        }`}
+                        style={{
+                            background: isCustomSelected ? currentColor : "transparent",
+                            borderStyle: isCustomSelected ? "solid" : "dashed",
+                            color: isCustomSelected ? "#ffffff" : "#9ca3af",
+                            textShadow: isCustomSelected ? "0 1px 2px rgba(0,0,0,0.5)" : "none"
+                        }}
+                        onClick={() => colorInputRef.current?.click()}
+                        title="Custom color"
+                        aria-label="Add custom color"
+                        type="button"
+                    >
+                        +
+                    </button>
+                    <input
+                        ref={colorInputRef}
+                        type="color"
+                        value={currentColor || "#ffffff"}
+                        onChange={(e) => onChange(e.target.value)}
+                        style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            opacity: 0,
+                            width: 0,
+                            height: 0,
+                            pointerEvents: "none"
+                        }}
+                    />
+                </div>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 interface BorderWidthSliderProps {
+    label?: string;
     value: number;
     onChange: (width: number) => void;
 }
 
-const BorderWidthSlider: React.FC<BorderWidthSliderProps> = ({ value, onChange }) => (
+const BorderWidthSlider: React.FC<BorderWidthSliderProps> = ({ label = "Border Width", value, onChange }) => (
     <div className="right-panel__prop-row">
-        <span className="right-panel__prop-label">Border Width</span>
+        <span className="right-panel__prop-label">{label}</span>
         <div className="right-panel__slider-row">
             <input
                 className="right-panel__slider"
                 type="range"
                 min={0}
-                max={10}
+                max={15}
                 step={1}
                 value={value}
                 onChange={(e) => onChange(Number(e.target.value))}
-                aria-label="Border width"
+                aria-label={label}
             />
             <span className="right-panel__slider-value">{value}px</span>
         </div>
@@ -204,6 +254,87 @@ const ThreadCard: React.FC<ThreadCardProps> = ({ thread, onClick }) => (
     </button>
 );
 
+interface FontSizeSelectProps {
+    value: number | undefined;
+    onChange: (size: number) => void;
+}
+
+const FontSizeSelect: React.FC<FontSizeSelectProps> = ({ value = 16, onChange }) => (
+    <div className="right-panel__prop-row">
+        <span className="right-panel__prop-label">Font Size</span>
+        <select
+            className="right-panel__select"
+            value={value}
+            onChange={(e) => onChange(Number(e.target.value))}
+            aria-label="Font Size"
+        >
+            {FONT_SIZES.map((size) => (
+                <option key={size.value} value={size.value}>
+                    {size.label}
+                </option>
+            ))}
+        </select>
+    </div>
+);
+
+interface TextFormattingProps {
+    bold: boolean;
+    italic: boolean;
+    underline: boolean;
+    dashed: boolean;
+    onToggle: (property: "bold" | "italic" | "underline" | "dashed") => void;
+}
+
+const TextFormatting: React.FC<TextFormattingProps> = ({
+    bold,
+    italic,
+    underline,
+    dashed,
+    onToggle,
+}) => (
+    <div className="right-panel__prop-row">
+        <span className="right-panel__prop-label">Formatting</span>
+        <div className="right-panel__format-group">
+            <button
+                className={`right-panel__format-btn ${bold ? "right-panel__format-btn--active" : ""}`}
+                style={{ fontWeight: "bold" }}
+                onClick={() => onToggle("bold")}
+                title="Bold"
+                type="button"
+            >
+                B
+            </button>
+            <button
+                className={`right-panel__format-btn ${italic ? "right-panel__format-btn--active" : ""}`}
+                style={{ fontStyle: "italic" }}
+                onClick={() => onToggle("italic")}
+                title="Italic"
+                type="button"
+            >
+                I
+            </button>
+            <button
+                className={`right-panel__format-btn ${underline ? "right-panel__format-btn--active" : ""}`}
+                style={{ textDecoration: "underline" }}
+                onClick={() => onToggle("underline")}
+                title="Underline"
+                type="button"
+            >
+                U
+            </button>
+            <button
+                className={`right-panel__format-btn ${dashed ? "right-panel__format-btn--active" : ""}`}
+                style={{ border: "1px dashed currentColor", borderRadius: "2px" }}
+                onClick={() => onToggle("dashed")}
+                title="Dashed Border"
+                type="button"
+            >
+                D
+            </button>
+        </div>
+    </div>
+);
+
 /* ── Main component ── */
 
 const RightPanel: React.FC<RightPanelProps> = ({
@@ -216,6 +347,11 @@ const RightPanel: React.FC<RightPanelProps> = ({
     onThreadClick,
     chatContent,
     minimapContent,
+    activeTool,
+    penColor = "#4285f4",
+    onPenColorChange,
+    penWidth = 3,
+    onPenWidthChange,
 }) => {
     const appearance = selectedElement?.appearance;
 
@@ -234,6 +370,32 @@ const RightPanel: React.FC<RightPanelProps> = ({
             onAppearanceChange({ fontFamily, fontWeight }),
         [onAppearanceChange],
     );
+
+    const handleFontSizeChange = useCallback(
+        (size: number) => onAppearanceChange({ fontSize: size }),
+        [onAppearanceChange],
+    );
+
+    const handleFormatToggle = useCallback(
+        (property: "bold" | "italic" | "underline" | "dashed") => {
+            if (property === "bold") {
+                const currentWeight = appearance?.fontWeight;
+                onAppearanceChange({
+                    fontWeight: currentWeight === "bold" ? "normal" : "bold",
+                });
+            } else {
+                onAppearanceChange({
+                    [property]: !appearance?.[property],
+                });
+            }
+        },
+        [appearance, onAppearanceChange],
+    );
+
+    const isLineElement = selectedElement && ["line", "arrow", "connector"].includes(selectedElement.type);
+    const isTextElement = selectedElement?.type === "text";
+    const isStickyElement = selectedElement?.type === "sticky-note";
+    const isCardElement = selectedElement && ["service-card", "database-card"].includes(selectedElement.type);
 
     return (
         <aside className="right-panel">
@@ -264,25 +426,114 @@ const RightPanel: React.FC<RightPanelProps> = ({
                 <>
                     <div className="right-panel__content">
                         {selectedElement == null ? (
-                            <EmptyState />
+                            activeTool === "pen" ? (
+                                <div className="right-panel__properties">
+                                    <div className="right-panel__section">
+                                        <h3 className="right-panel__section-header">Pen Tool Settings</h3>
+                                        <ColorPicker
+                                            label="Pen Color"
+                                            currentColor={penColor}
+                                            onChange={onPenColorChange || (() => {})}
+                                        />
+                                        <BorderWidthSlider
+                                            label="Pen Width"
+                                            value={penWidth}
+                                            onChange={onPenWidthChange || (() => {})}
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <EmptyState />
+                            )
                         ) : (
                             <div className="right-panel__properties">
                                 {/* Appearance section */}
                                 <div className="right-panel__section">
                                     <h3 className="right-panel__section-header">Appearance</h3>
-                                    <ColorPicker
-                                        currentColor={appearance?.fillColor}
-                                        onChange={handleFillColorChange}
-                                    />
-                                    <BorderWidthSlider
-                                        value={appearance?.strokeWidth ?? 2}
-                                        onChange={handleStrokeWidthChange}
-                                    />
-                                    <TypographySelect
-                                        currentFont={appearance?.fontFamily}
-                                        currentWeight={appearance?.fontWeight}
-                                        onChange={handleTypographyChange}
-                                    />
+                                    {isLineElement && (
+                                        <>
+                                            <ColorPicker
+                                                label="Line Color"
+                                                currentColor={appearance?.strokeColor || "#4285f4"}
+                                                onChange={(color) => onAppearanceChange({ strokeColor: color })}
+                                            />
+                                            <BorderWidthSlider
+                                                label="Line Width"
+                                                value={appearance?.strokeWidth ?? 2}
+                                                onChange={handleStrokeWidthChange}
+                                            />
+                                        </>
+                                    )}
+                                    {isTextElement && (
+                                        <>
+                                            <ColorPicker
+                                                label="Text Color"
+                                                currentColor={appearance?.fillColor || "#1a1a2e"}
+                                                onChange={handleFillColorChange}
+                                            />
+                                            <TypographySelect
+                                                currentFont={appearance?.fontFamily}
+                                                currentWeight={appearance?.fontWeight}
+                                                onChange={handleTypographyChange}
+                                            />
+                                            <FontSizeSelect
+                                                value={appearance?.fontSize}
+                                                onChange={handleFontSizeChange}
+                                            />
+                                            <TextFormatting
+                                                bold={appearance?.fontWeight === "bold"}
+                                                italic={!!appearance?.italic}
+                                                underline={!!appearance?.underline}
+                                                dashed={!!appearance?.dashed}
+                                                onToggle={handleFormatToggle}
+                                            />
+                                        </>
+                                    )}
+                                    {isStickyElement && (
+                                        <>
+                                            <ColorPicker
+                                                label="Fill Color"
+                                                currentColor={appearance?.fillColor || "#f5a623"}
+                                                onChange={handleFillColorChange}
+                                            />
+                                            <TypographySelect
+                                                currentFont={appearance?.fontFamily}
+                                                currentWeight={appearance?.fontWeight}
+                                                onChange={handleTypographyChange}
+                                            />
+                                        </>
+                                    )}
+                                    {isCardElement && (
+                                        <>
+                                            <ColorPicker
+                                                label="Card Color"
+                                                currentColor={appearance?.fillColor || "#ffffff"}
+                                                onChange={handleFillColorChange}
+                                            />
+                                            <BorderWidthSlider
+                                                label="Border Width"
+                                                value={appearance?.strokeWidth ?? 4}
+                                                onChange={handleStrokeWidthChange}
+                                            />
+                                        </>
+                                    )}
+                                    {!isLineElement && !isTextElement && !isStickyElement && !isCardElement && (
+                                        <>
+                                            <ColorPicker
+                                                currentColor={appearance?.fillColor}
+                                                onChange={handleFillColorChange}
+                                            />
+                                            <BorderWidthSlider
+                                                value={appearance?.strokeWidth ?? 2}
+                                                onChange={handleStrokeWidthChange}
+                                            />
+                                            <TypographySelect
+                                                currentFont={appearance?.fontFamily}
+                                                currentWeight={appearance?.fontWeight}
+                                                onChange={handleTypographyChange}
+                                            />
+                                        </>
+                                    )}
                                 </div>
 
                                 {/* Details section based on element type */}

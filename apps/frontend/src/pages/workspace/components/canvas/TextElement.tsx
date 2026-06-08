@@ -25,6 +25,9 @@ const TextElement: React.FC<TextElementProps> = ({
                 fontSize: element.appearance.fontSize || 16,
                 fontFamily: element.appearance.fontFamily || "inherit",
                 fontWeight: element.appearance.fontWeight || "normal",
+                fontStyle: element.appearance.italic ? "italic" : "normal",
+                textDecoration: element.appearance.underline ? "underline" : "none",
+                border: element.appearance.dashed ? `1.5px dashed ${element.appearance.fillColor || "#1a1a2e"}` : "1.5px solid transparent",
                 textAlign: element.appearance.textAlign || "left",
                 cursor: isEditing ? "text" : "grab",
             }}
@@ -44,6 +47,8 @@ const TextElement: React.FC<TextElementProps> = ({
                         fontFamily: "inherit",
                         fontSize: "inherit",
                         fontWeight: "inherit",
+                        fontStyle: "inherit",
+                        textDecoration: "inherit",
                         textAlign: "inherit",
                         padding: 0,
                         margin: 0,

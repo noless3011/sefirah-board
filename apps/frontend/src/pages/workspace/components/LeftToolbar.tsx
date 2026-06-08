@@ -5,7 +5,6 @@ import "./LeftToolbar.css";
 interface LeftToolbarProps {
     activeTool: ToolType;
     onToolChange: (tool: ToolType) => void;
-    onHistoryClick: () => void;
     onSettingsClick: () => void;
 }
 
@@ -82,7 +81,6 @@ const toolButtons: ToolButtonConfig[] = [
 const LeftToolbar: React.FC<LeftToolbarProps> = ({
     activeTool,
     onToolChange,
-    onHistoryClick,
     onSettingsClick,
 }) => {
     return (
@@ -104,18 +102,6 @@ const LeftToolbar: React.FC<LeftToolbarProps> = ({
             <div className="left-toolbar__separator" />
 
             <div className="left-toolbar__utilities">
-                <button
-                    className="left-toolbar__btn"
-                    onClick={onHistoryClick}
-                    aria-label="History"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    <span className="left-toolbar__tooltip">History</span>
-                </button>
-
                 <button
                     className="left-toolbar__btn"
                     onClick={onSettingsClick}

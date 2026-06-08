@@ -55,6 +55,9 @@ const DashboardLayout: React.FC = () => {
                 if (res.ok) {
                     const json = await res.json();
                     setUser(json.data || json);
+                } else if (res.status === 401 || res.status === 404) {
+                    // Token is invalid/expired or user was deleted from DB (e.g. after reseed)
+                    handleLogout();
                 } else {
                     setUser({
                         id: "",
