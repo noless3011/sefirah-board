@@ -5,7 +5,8 @@ const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 5;
 const ZOOM_STEP = 0.1;
 
-export function useCanvas(canvasRef: React.RefObject<HTMLDivElement | null>) {
+export function useCanvas() {
+    const canvasRef = useRef<HTMLDivElement | null>(null);
     const [viewport, setViewport] = useState<CanvasViewport>({
         x: 0,
         y: 0,
@@ -86,8 +87,7 @@ export function useCanvas(canvasRef: React.RefObject<HTMLDivElement | null>) {
         };
     }, [canvasRef]);
 
-    // Keep handleWheel as empty callback for compatibility
-    const handleWheel = useCallback(() => {}, []);
+
 
     const startPan = useCallback(
         (e: React.MouseEvent) => {
@@ -142,10 +142,10 @@ export function useCanvas(canvasRef: React.RefObject<HTMLDivElement | null>) {
         zoomIn,
         zoomOut,
         setZoom,
-        handleWheel,
         startPan,
         movePan,
         endPan,
         screenToCanvas,
+        canvasRef,
     };
 }

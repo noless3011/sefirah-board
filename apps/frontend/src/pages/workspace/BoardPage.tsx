@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import type { CanvasElementAppearance, Thread, CanvasElement, Board } from "@sefirah/shared";
 
@@ -86,8 +86,18 @@ const BoardPage: React.FC = () => {
     );
 
     // We instantiate useCanvas here so we can pass its state/methods down
-    const dummyRef = useRef<HTMLDivElement>(null); // Passed to useCanvas, but actual ref is inside Canvas component
-    const { viewport, setViewport, zoomIn, zoomOut } = useCanvas(dummyRef);
+    const {
+        viewport,
+        setViewport,
+        zoomIn,
+        zoomOut,
+        startPan,
+        movePan,
+        endPan,
+        isPanning,
+        screenToCanvas,
+        canvasRef,
+    } = useCanvas();
 
     // Initial load for board and threads
     useEffect(() => {
@@ -267,7 +277,6 @@ const BoardPage: React.FC = () => {
                     }}
                     collaboratorCursors={cursors}
                     viewport={viewport}
-                    setViewport={setViewport}
                     activeTool={activeTool}
                     setActiveTool={setActiveTool}
                     onAddElement={handleAddElementDirect}
@@ -275,6 +284,12 @@ const BoardPage: React.FC = () => {
                     penWidth={penWidth}
                     canvasBgColor={canvasBgColor}
                     canvasGridStyle={canvasGridStyle}
+                    canvasRef={canvasRef}
+                    startPan={startPan}
+                    movePan={movePan}
+                    endPan={endPan}
+                    isPanning={isPanning}
+                    screenToCanvas={screenToCanvas}
                 />
             </div>
 

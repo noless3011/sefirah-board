@@ -1,7 +1,6 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useState } from "react";
 import type { CanvasElement } from "@sefirah/shared";
 import type { CollaboratorCursorInfo, ToolType } from "../types/canvas.types";
-import { useCanvas } from "../hooks/useCanvas";
 import CanvasCard from "./canvas/CanvasCard";
 import StickyNote from "./canvas/StickyNote";
 import TextElement from "./canvas/TextElement";
@@ -15,8 +14,7 @@ interface CanvasProps {
     onSelect: (id: string | null, addToSelection?: boolean) => void;
     onUpdateElement: (id: string, changes: Partial<CanvasElement>) => void;
     collaboratorCursors: CollaboratorCursorInfo[];
-    viewport: ReturnType<typeof useCanvas>["viewport"];
-    setViewport: ReturnType<typeof useCanvas>["setViewport"];
+    viewport: { x: number; y: number; zoom: number };
     onCanvasClick?: () => void;
     activeTool: ToolType;
     setActiveTool: (tool: ToolType) => void;
@@ -25,6 +23,12 @@ interface CanvasProps {
     penWidth?: number;
     canvasBgColor?: string;
     canvasGridStyle?: "dots" | "lines" | "none";
+    canvasRef: React.RefObject<HTMLDivElement | null>;
+    startPan: (e: React.MouseEvent) => void;
+    movePan: (e: React.MouseEvent) => void;
+    endPan: () => void;
+    isPanning: boolean;
+    screenToCanvas: (screenX: number, screenY: number) => { x: number; y: number };
 }
 
 const Canvas: React.FC<CanvasProps> = ({
@@ -34,7 +38,6 @@ const Canvas: React.FC<CanvasProps> = ({
     onUpdateElement,
     collaboratorCursors,
     viewport,
-    setViewport,
     onCanvasClick,
     activeTool,
     setActiveTool,
@@ -43,8 +46,13 @@ const Canvas: React.FC<CanvasProps> = ({
     penWidth = 3,
     canvasBgColor = "#f8f9fa",
     canvasGridStyle = "dots",
+    canvasRef,
+    startPan,
+    movePan,
+    endPan,
+    isPanning,
+    screenToCanvas,
 }) => {
-    const containerRef = useRef<HTMLDivElement>(null);
     const [editingElementId, setEditingElementId] = useState<string | null>(null);
 
     const handleElementDoubleClick = (e: React.MouseEvent, id: string) => {
@@ -53,13 +61,6 @@ const Canvas: React.FC<CanvasProps> = ({
             setEditingElementId(id);
         }
     };
-
-    const { startPan, movePan, endPan, isPanning, screenToCanvas } = useCanvas(containerRef);
-
-    // Sync viewport state to hook's state
-    useEffect(() => {
-        setViewport(viewport);
-    }, [viewport, setViewport]);
 
     // Handle element dragging
     const draggingRef = useRef<{ id: string; startX: number; startY: number; initialX: number; initialY: number } | null>(null);
@@ -434,7 +435,7 @@ const Canvas: React.FC<CanvasProps> = ({
 
     return (
         <div
-            ref={containerRef}
+            ref={canvasRef}
             className={`canvas-container ${isPanning ? 'canvas-container--panning' : ''}`}
             onMouseDown={handleContainerMouseDown}
             onMouseMove={handleMouseMove}
