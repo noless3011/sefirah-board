@@ -34,6 +34,17 @@ const FONT_OPTIONS = [
     { value: "Inter", label: "Inter Bold", weight: "bold" as const },
 ];
 
+const FONT_SIZES = [
+    { label: "12px", value: 12 },
+    { label: "14px", value: 14 },
+    { label: "16px", value: 16 },
+    { label: "18px", value: 18 },
+    { label: "24px", value: 24 },
+    { label: "32px", value: 32 },
+    { label: "48px", value: 48 },
+    { label: "64px", value: 64 },
+];
+
 function getInitials(name: string): string {
     return name
         .split(" ")
@@ -243,6 +254,87 @@ const ThreadCard: React.FC<ThreadCardProps> = ({ thread, onClick }) => (
     </button>
 );
 
+interface FontSizeSelectProps {
+    value: number | undefined;
+    onChange: (size: number) => void;
+}
+
+const FontSizeSelect: React.FC<FontSizeSelectProps> = ({ value = 16, onChange }) => (
+    <div className="right-panel__prop-row">
+        <span className="right-panel__prop-label">Font Size</span>
+        <select
+            className="right-panel__select"
+            value={value}
+            onChange={(e) => onChange(Number(e.target.value))}
+            aria-label="Font Size"
+        >
+            {FONT_SIZES.map((size) => (
+                <option key={size.value} value={size.value}>
+                    {size.label}
+                </option>
+            ))}
+        </select>
+    </div>
+);
+
+interface TextFormattingProps {
+    bold: boolean;
+    italic: boolean;
+    underline: boolean;
+    dashed: boolean;
+    onToggle: (property: "bold" | "italic" | "underline" | "dashed") => void;
+}
+
+const TextFormatting: React.FC<TextFormattingProps> = ({
+    bold,
+    italic,
+    underline,
+    dashed,
+    onToggle,
+}) => (
+    <div className="right-panel__prop-row">
+        <span className="right-panel__prop-label">Formatting</span>
+        <div className="right-panel__format-group">
+            <button
+                className={`right-panel__format-btn ${bold ? "right-panel__format-btn--active" : ""}`}
+                style={{ fontWeight: "bold" }}
+                onClick={() => onToggle("bold")}
+                title="Bold"
+                type="button"
+            >
+                B
+            </button>
+            <button
+                className={`right-panel__format-btn ${italic ? "right-panel__format-btn--active" : ""}`}
+                style={{ fontStyle: "italic" }}
+                onClick={() => onToggle("italic")}
+                title="Italic"
+                type="button"
+            >
+                I
+            </button>
+            <button
+                className={`right-panel__format-btn ${underline ? "right-panel__format-btn--active" : ""}`}
+                style={{ textDecoration: "underline" }}
+                onClick={() => onToggle("underline")}
+                title="Underline"
+                type="button"
+            >
+                U
+            </button>
+            <button
+                className={`right-panel__format-btn ${dashed ? "right-panel__format-btn--active" : ""}`}
+                style={{ border: "1px dashed currentColor", borderRadius: "2px" }}
+                onClick={() => onToggle("dashed")}
+                title="Dashed Border"
+                type="button"
+            >
+                D
+            </button>
+        </div>
+    </div>
+);
+
 /* ── Main component ── */
 
 const RightPanel: React.FC<RightPanelProps> = ({
@@ -277,6 +369,27 @@ const RightPanel: React.FC<RightPanelProps> = ({
         (fontFamily: string, fontWeight: CanvasElementAppearance["fontWeight"]) =>
             onAppearanceChange({ fontFamily, fontWeight }),
         [onAppearanceChange],
+    );
+
+    const handleFontSizeChange = useCallback(
+        (size: number) => onAppearanceChange({ fontSize: size }),
+        [onAppearanceChange],
+    );
+
+    const handleFormatToggle = useCallback(
+        (property: "bold" | "italic" | "underline" | "dashed") => {
+            if (property === "bold") {
+                const currentWeight = appearance?.fontWeight;
+                onAppearanceChange({
+                    fontWeight: currentWeight === "bold" ? "normal" : "bold",
+                });
+            } else {
+                onAppearanceChange({
+                    [property]: !appearance?.[property],
+                });
+            }
+        },
+        [appearance, onAppearanceChange],
     );
 
     const isLineElement = selectedElement && ["line", "arrow", "connector"].includes(selectedElement.type);
@@ -362,6 +475,17 @@ const RightPanel: React.FC<RightPanelProps> = ({
                                                 currentFont={appearance?.fontFamily}
                                                 currentWeight={appearance?.fontWeight}
                                                 onChange={handleTypographyChange}
+                                            />
+                                            <FontSizeSelect
+                                                value={appearance?.fontSize}
+                                                onChange={handleFontSizeChange}
+                                            />
+                                            <TextFormatting
+                                                bold={appearance?.fontWeight === "bold"}
+                                                italic={!!appearance?.italic}
+                                                underline={!!appearance?.underline}
+                                                dashed={!!appearance?.dashed}
+                                                onToggle={handleFormatToggle}
                                             />
                                         </>
                                     )}

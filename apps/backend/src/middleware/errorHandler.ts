@@ -32,6 +32,11 @@ export function errorHandler(
         errorName = err.name === "Error" ? "AppError" : err.name;
         message = err.message;
         details = err.details;
+    } else if (err.code === "P2003" && (err.message?.includes("ownerId") || JSON.stringify(err.meta)?.includes("ownerId"))) {
+        // Handle database foreign key violation on ownerId due to deleted user / ghost token
+        statusCode = 401;
+        errorName = "Unauthorized";
+        message = "Your user session is invalid. Please log in again.";
     } else if (err.status) {
         statusCode = err.status;
         message = err.message;

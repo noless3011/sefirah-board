@@ -19,139 +19,562 @@ const LOCAL_TEMPLATES: LocalTemplate[] = [
     {
         title: "Technical System Flow",
         category: "Flowcharts",
-        description: "Map out complex architecture and user logic with precision-aligned connectors and logical flow patterns.",
+        description: "Map out complex architecture and user logic with precision-aligned service cards and database connectors.",
         thumbnailUrl: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=600&q=80",
         elements: [
             {
-                type: "rectangle",
+                type: "text",
                 x: 100,
-                y: 100,
-                width: 150,
-                height: 80,
-                appearance: { fill: "#ffffff", stroke: "#000000", strokeWidth: 2 },
-                content: "Start",
+                y: 40,
+                width: 600,
+                height: 50,
+                content: "Microservices Order Processing Workflow",
+                appearance: { fill: "#1e293b", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                id: "gateway",
+                type: "service-card",
+                x: 100,
+                y: 250,
+                width: 220,
+                height: 120,
+                title: "API Gateway",
+                description: "Entry point for client requests, handles SSL termination and routing.",
+                badge: "API",
+                appearance: { stroke: "#34a853", fill: "#ffffff", strokeWidth: 4 }
+            },
+            {
+                id: "auth",
+                type: "service-card",
+                x: 420,
+                y: 120,
+                width: 220,
+                height: 120,
+                title: "Auth Service",
+                description: "Validates JWT tokens, manages user sessions & permissions.",
+                badge: "SERVICE",
+                appearance: { stroke: "#4285f4", fill: "#ffffff", strokeWidth: 4 }
+            },
+            {
+                id: "order",
+                type: "service-card",
+                x: 420,
+                y: 280,
+                width: 220,
+                height: 120,
+                title: "Order Processing Service",
+                description: "Processes new orders, coordinates inventory check and payment.",
+                badge: "SERVICE",
+                appearance: { stroke: "#4285f4", fill: "#ffffff", strokeWidth: 4 }
+            },
+            {
+                id: "payment",
+                type: "service-card",
+                x: 420,
+                y: 440,
+                width: 220,
+                height: 120,
+                title: "Payment Service",
+                description: "Integrates with Stripe to authorize and capture credit card payments.",
+                badge: "SERVICE",
+                appearance: { stroke: "#4285f4", fill: "#ffffff", strokeWidth: 4 }
+            },
+            {
+                id: "order_db",
+                type: "database-card",
+                x: 740,
+                y: 280,
+                width: 220,
+                height: 120,
+                title: "Orders Database",
+                description: "Relational store for orders, items, and billing details.",
+                badge: "DATABASE",
+                appearance: { stroke: "#8B6914", fill: "#ffffff", strokeWidth: 4 }
+            },
+            {
+                id: "notif_queue",
+                type: "service-card",
+                x: 740,
+                y: 120,
+                width: 220,
+                height: 120,
+                title: "Notification Broker",
+                description: "Publishes email and push notification tasks to workers.",
+                badge: "QUEUE",
+                appearance: { stroke: "#9b59b6", fill: "#ffffff", strokeWidth: 4 }
             },
             {
                 type: "arrow",
-                points: [250, 140, 350, 140],
-                appearance: { stroke: "#000000", strokeWidth: 2 },
+                startElementId: "gateway",
+                endElementId: "auth",
+                points: [{ x: 100, y: 250 }, { x: 420, y: 120 }],
+                appearance: { stroke: "#64748b", strokeWidth: 2 }
             },
             {
-                type: "rectangle",
-                x: 350,
-                y: 100,
-                width: 150,
-                height: 80,
-                appearance: { fill: "#ffffff", stroke: "#000000", strokeWidth: 2 },
-                content: "Process",
+                type: "arrow",
+                startElementId: "gateway",
+                endElementId: "order",
+                points: [{ x: 100, y: 250 }, { x: 420, y: 280 }],
+                appearance: { stroke: "#64748b", strokeWidth: 2 }
             },
+            {
+                type: "arrow",
+                startElementId: "gateway",
+                endElementId: "payment",
+                points: [{ x: 100, y: 250 }, { x: 420, y: 440 }],
+                appearance: { stroke: "#64748b", strokeWidth: 2 }
+            },
+            {
+                type: "arrow",
+                startElementId: "order",
+                endElementId: "order_db",
+                points: [{ x: 420, y: 280 }, { x: 740, y: 280 }],
+                appearance: { stroke: "#64748b", strokeWidth: 2 }
+            },
+            {
+                type: "arrow",
+                startElementId: "order",
+                endElementId: "notif_queue",
+                points: [{ x: 420, y: 280 }, { x: 740, y: 120 }],
+                appearance: { stroke: "#64748b", strokeWidth: 2 }
+            }
         ]
     },
     {
         title: "Rapid Ideation Canvas",
         category: "Brainstorming",
-        description: "A high-energy workspace for divergent thinking, including timed zones and collaborative voting stickies.",
+        description: "A structured brainstorming canvas with custom header categories, instructions, and voting cards.",
         thumbnailUrl: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=600&q=80",
         elements: [
             {
+                type: "text",
+                x: 50,
+                y: 40,
+                width: 600,
+                height: 50,
+                content: "Feature Ideation Board",
+                appearance: { fill: "#0f172a", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 50,
+                y: 120,
+                width: 250,
+                height: 40,
+                content: "🚨 USER PAIN POINTS",
+                appearance: { fill: "#ef4444", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 350,
+                y: 120,
+                width: 250,
+                height: 40,
+                content: "💡 SOLUTION IDEAS",
+                appearance: { fill: "#3b82f6", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 650,
+                y: 120,
+                width: 250,
+                height: 40,
+                content: "🚀 MOONSHOTS",
+                appearance: { fill: "#8b5cf6", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 950,
+                y: 120,
+                width: 250,
+                height: 40,
+                content: "📦 PRODUCT FEATURES",
+                appearance: { fill: "#10b981", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                id: "pain_1",
                 type: "sticky-note",
-                x: 200,
-                y: 200,
-                width: 120,
-                height: 120,
-                appearance: { fill: "#fff9c4", stroke: "#fbc02d" },
-                content: "Main Idea",
+                x: 50,
+                y: 180,
+                width: 200,
+                height: 150,
+                content: "Users struggle to locate the export button on mobile viewports.",
+                appearance: { fill: "#fecaca", stroke: "#f87171", strokeWidth: 1 }
+            },
+            {
+                id: "pain_2",
+                type: "sticky-note",
+                x: 50,
+                y: 350,
+                width: 200,
+                height: 150,
+                content: "Collaboration delays are noticeable when multiple users edit concurrently.",
+                appearance: { fill: "#fecaca", stroke: "#f87171", strokeWidth: 1 }
+            },
+            {
+                id: "sol_1",
+                type: "sticky-note",
+                x: 350,
+                y: 180,
+                width: 200,
+                height: 150,
+                content: "Move the export button to the top primary navigation bar.",
+                appearance: { fill: "#dbeafe", stroke: "#60a5fa", strokeWidth: 1 }
+            },
+            {
+                id: "sol_2",
+                type: "sticky-note",
+                x: 350,
+                y: 350,
+                width: 200,
+                height: 150,
+                content: "Optimize websocket messages by batching position updates.",
+                appearance: { fill: "#dbeafe", stroke: "#60a5fa", strokeWidth: 1 }
             },
             {
                 type: "sticky-note",
-                x: 350,
-                y: 150,
-                width: 120,
-                height: 120,
-                appearance: { fill: "#e1f5fe", stroke: "#0288d1" },
-                content: "Feature A",
+                x: 650,
+                y: 180,
+                width: 200,
+                height: 150,
+                content: "AI-powered layout auto-organizer to sort cards instantly.",
+                appearance: { fill: "#f3e8ff", stroke: "#c084fc", strokeWidth: 1 }
             },
             {
                 type: "sticky-note",
-                x: 350,
-                y: 250,
-                width: 120,
-                height: 120,
-                appearance: { fill: "#f1f8e9", stroke: "#689f38" },
-                content: "Feature B",
+                x: 650,
+                y: 350,
+                width: 200,
+                height: 150,
+                content: "Fully immersive VR board editing modes.",
+                appearance: { fill: "#f3e8ff", stroke: "#c084fc", strokeWidth: 1 }
             },
+            {
+                type: "sticky-note",
+                x: 950,
+                y: 180,
+                width: 200,
+                height: 150,
+                content: "Responsive TopToolbar with visible navigation shortcuts.",
+                appearance: { fill: "#d1fae5", stroke: "#34d399", strokeWidth: 1 }
+            },
+            {
+                type: "sticky-note",
+                x: 950,
+                y: 350,
+                width: 200,
+                height: 150,
+                content: "Refactored collaborative state manager.",
+                appearance: { fill: "#d1fae5", stroke: "#34d399", strokeWidth: 1 }
+            },
+            {
+                type: "arrow",
+                startElementId: "pain_1",
+                endElementId: "sol_1",
+                points: [{ x: 250, y: 255 }, { x: 350, y: 255 }],
+                appearance: { stroke: "#94a3b8", strokeWidth: 2 },
+                strokeDash: true
+            },
+            {
+                type: "arrow",
+                startElementId: "pain_2",
+                endElementId: "sol_2",
+                points: [{ x: 250, y: 425 }, { x: 350, y: 425 }],
+                appearance: { stroke: "#94a3b8", strokeWidth: 2 },
+                strokeDash: true
+            }
         ]
     },
     {
         title: "Atomic Components",
         category: "Design Systems",
-        description: "The foundation for your digital brand. Includes token mapping, accessibility checks, and variant blueprints.",
+        description: "AWS Cloud Infrastructure architecture containing load balancing, caching tiers, queues, and databases.",
         thumbnailUrl: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=600&q=80",
         elements: [
             {
+                type: "text",
+                x: 100,
+                y: 40,
+                width: 600,
+                height: 50,
+                content: "AWS Cloud Architecture - Production V1",
+                appearance: { fill: "#0f172a", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                id: "alb",
                 type: "service-card",
                 x: 100,
-                y: 100,
-                width: 200,
-                height: 120,
-                appearance: { fill: "#ffffff", stroke: "#ff9900" },
-                title: "VPC",
-                description: "Virtual Private Cloud",
-            },
-            {
-                type: "service-card",
-                x: 350,
-                y: 100,
-                width: 200,
-                height: 120,
-                appearance: { fill: "#ffffff", stroke: "#ff9900" },
-                title: "EC2",
-                description: "Compute Instance",
-            },
-            {
-                type: "database-card",
-                x: 350,
                 y: 250,
-                width: 200,
+                width: 220,
                 height: 120,
-                appearance: { fill: "#ffffff", stroke: "#3367d6" },
-                title: "RDS",
-                description: "Relational Database",
+                title: "Application Load Balancer",
+                description: "Directs incoming client traffic across multiple ECS instances.",
+                badge: "API",
+                appearance: { stroke: "#ff9900", fill: "#ffffff", strokeWidth: 4 }
             },
+            {
+                id: "web_ecs",
+                type: "service-card",
+                x: 400,
+                y: 150,
+                width: 220,
+                height: 120,
+                title: "Web App ECS Cluster",
+                description: "Containers running frontend server and client routing API endpoints.",
+                badge: "SERVICE",
+                appearance: { stroke: "#4285f4", fill: "#ffffff", strokeWidth: 4 }
+            },
+            {
+                id: "redis",
+                type: "service-card",
+                x: 700,
+                y: 150,
+                width: 220,
+                height: 120,
+                title: "ElastiCache Redis",
+                description: "In-memory caching for session states and rapid page views.",
+                badge: "CACHE",
+                appearance: { stroke: "#ea4335", fill: "#ffffff", strokeWidth: 4 }
+            },
+            {
+                id: "sqs",
+                type: "service-card",
+                x: 400,
+                y: 350,
+                width: 220,
+                height: 120,
+                title: "SQS Job Queue",
+                description: "Stores background jobs to be consumed asynchronously by workers.",
+                badge: "QUEUE",
+                appearance: { stroke: "#9b59b6", fill: "#ffffff", strokeWidth: 4 }
+            },
+            {
+                id: "worker_ecs",
+                type: "service-card",
+                x: 700,
+                y: 350,
+                width: 220,
+                height: 120,
+                title: "Worker ECS Cluster",
+                description: "Pulls notification and export events from SQS and processes them.",
+                badge: "SERVICE",
+                appearance: { stroke: "#4285f4", fill: "#ffffff", strokeWidth: 4 }
+            },
+            {
+                id: "rds",
+                type: "database-card",
+                x: 1000,
+                y: 250,
+                width: 220,
+                height: 120,
+                title: "Aurora PostgreSQL",
+                description: "Multi-AZ replicated relational database storing client details.",
+                badge: "DATABASE",
+                appearance: { stroke: "#8B6914", fill: "#ffffff", strokeWidth: 4 }
+            },
+            {
+                type: "arrow",
+                startElementId: "alb",
+                endElementId: "web_ecs",
+                points: [{ x: 100, y: 250 }, { x: 400, y: 150 }],
+                appearance: { stroke: "#ff9900", strokeWidth: 2 }
+            },
+            {
+                type: "arrow",
+                startElementId: "web_ecs",
+                endElementId: "redis",
+                points: [{ x: 400, y: 150 }, { x: 700, y: 150 }],
+                appearance: { stroke: "#64748b", strokeWidth: 2 }
+            },
+            {
+                type: "arrow",
+                startElementId: "web_ecs",
+                endElementId: "sqs",
+                points: [{ x: 400, y: 150 }, { x: 400, y: 350 }],
+                appearance: { stroke: "#64748b", strokeWidth: 2 }
+            },
+            {
+                type: "arrow",
+                startElementId: "sqs",
+                endElementId: "worker_ecs",
+                points: [{ x: 400, y: 350 }, { x: 700, y: 350 }],
+                appearance: { stroke: "#64748b", strokeWidth: 2 }
+            },
+            {
+                type: "arrow",
+                startElementId: "web_ecs",
+                endElementId: "rds",
+                points: [{ x: 400, y: 150 }, { x: 1000, y: 250 }],
+                appearance: { stroke: "#64748b", strokeWidth: 2 }
+            },
+            {
+                type: "arrow",
+                startElementId: "worker_ecs",
+                endElementId: "rds",
+                points: [{ x: 700, y: 350 }, { x: 1000, y: 250 }],
+                appearance: { stroke: "#64748b", strokeWidth: 2 }
+            }
         ]
     },
     {
         title: "Product Roadmap Sync",
         category: "Project Management",
-        description: "Align stakeholders with a high-level visual timeline, dependency mapping, and resource scheduling grids.",
+        description: "Align stakeholders with a high-level timeline, active epic items, and task priorities.",
         thumbnailUrl: "https://images.unsplash.com/photo-1531538606174-0f90ff5dce83?auto=format&fit=crop&w=600&q=80",
         elements: [
             {
-                type: "rectangle",
-                x: 100,
-                y: 120,
-                width: 180,
-                height: 60,
-                appearance: { fill: "#f8fafc", stroke: "#64748b", strokeWidth: 2 },
-                content: "Q1: Authentication"
+                type: "text",
+                x: 50,
+                y: 40,
+                width: 600,
+                height: 50,
+                content: "Product Development Roadmap - H2 2026",
+                appearance: { fill: "#0f172a", stroke: "none", strokeWidth: 0 }
             },
             {
-                type: "rectangle",
-                x: 320,
-                y: 120,
-                width: 180,
-                height: 60,
-                appearance: { fill: "#eff6ff", stroke: "#3b82f6", strokeWidth: 2 },
-                content: "Q2: Real-time Canvas"
+                type: "text",
+                x: 50,
+                y: 150,
+                width: 200,
+                height: 40,
+                content: "🔐 SECURITY & AUTH",
+                appearance: { fill: "#1e293b", stroke: "none", strokeWidth: 0 }
             },
             {
-                type: "rectangle",
-                x: 540,
-                y: 120,
-                width: 180,
-                height: 60,
-                appearance: { fill: "#fdf2f8", stroke: "#ec4899", strokeWidth: 2 },
-                content: "Q3: Team Collaboration"
+                type: "text",
+                x: 50,
+                y: 350,
+                width: 200,
+                height: 40,
+                content: "🎨 CANVAS ENGINE",
+                appearance: { fill: "#1e293b", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 50,
+                y: 550,
+                width: 200,
+                height: 40,
+                content: "🤝 INTEGRATIONS",
+                appearance: { fill: "#1e293b", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 300,
+                y: 100,
+                width: 200,
+                height: 30,
+                content: "Sprint 1 (Jul - Aug)",
+                appearance: { fill: "#475569", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 600,
+                y: 100,
+                width: 200,
+                height: 30,
+                content: "Sprint 2 (Sept - Oct)",
+                appearance: { fill: "#475569", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 900,
+                y: 100,
+                width: 200,
+                height: 30,
+                content: "Sprint 3 (Nov - Dec)",
+                appearance: { fill: "#475569", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                id: "task_oauth",
+                type: "sticky-note",
+                x: 300,
+                y: 150,
+                width: 220,
+                height: 120,
+                content: "Integrate Google/GitHub OAuth logins for easy team registration.",
+                appearance: { fill: "#dbeafe", stroke: "#60a5fa", strokeWidth: 1 }
+            },
+            {
+                id: "task_export",
+                type: "sticky-note",
+                x: 300,
+                y: 350,
+                width: 220,
+                height: 120,
+                content: "Implement high-res client-side board export to PNG formats.",
+                appearance: { fill: "#d1fae5", stroke: "#34d399", strokeWidth: 1 }
+            },
+            {
+                id: "task_slack",
+                type: "sticky-note",
+                x: 300,
+                y: 550,
+                width: 220,
+                height: 120,
+                content: "Build slack notification webhook for channel activity.",
+                appearance: { fill: "#fef3c7", stroke: "#f59e0b", strokeWidth: 1 }
+            },
+            {
+                id: "task_roles",
+                type: "sticky-note",
+                x: 600,
+                y: 150,
+                width: 220,
+                height: 120,
+                content: "Add granular workspace permissions (Viewer vs Editor roles).",
+                appearance: { fill: "#dbeafe", stroke: "#60a5fa", strokeWidth: 1 }
+            },
+            {
+                id: "task_zoom",
+                type: "sticky-note",
+                x: 600,
+                y: 350,
+                width: 220,
+                height: 120,
+                content: "Optimize scroll-to-zoom gestures and touch viewport rendering.",
+                appearance: { fill: "#d1fae5", stroke: "#34d399", strokeWidth: 1 }
+            },
+            {
+                id: "task_ldap",
+                type: "sticky-note",
+                x: 900,
+                y: 150,
+                width: 220,
+                height: 120,
+                content: "Enterprise SSO integration using SAML/LDAP mappings.",
+                appearance: { fill: "#dbeafe", stroke: "#60a5fa", strokeWidth: 1 }
+            },
+            {
+                id: "task_undo",
+                type: "sticky-note",
+                x: 900,
+                y: 350,
+                width: 220,
+                height: 120,
+                content: "Create history logger supporting undo/redo canvas operations.",
+                appearance: { fill: "#d1fae5", stroke: "#34d399", strokeWidth: 1 }
+            },
+            {
+                type: "arrow",
+                startElementId: "task_oauth",
+                endElementId: "task_roles",
+                points: [{ x: 300, y: 150 }, { x: 600, y: 150 }],
+                appearance: { stroke: "#94a3b8", strokeWidth: 2 }
+            },
+            {
+                type: "arrow",
+                startElementId: "task_roles",
+                endElementId: "task_ldap",
+                points: [{ x: 600, y: 150 }, { x: 900, y: 150 }],
+                appearance: { stroke: "#94a3b8", strokeWidth: 2 }
+            },
+            {
+                type: "arrow",
+                startElementId: "task_export",
+                endElementId: "task_zoom",
+                points: [{ x: 300, y: 350 }, { x: 600, y: 350 }],
+                appearance: { stroke: "#94a3b8", strokeWidth: 2 }
             }
         ]
     },
@@ -162,31 +585,184 @@ const LOCAL_TEMPLATES: LocalTemplate[] = [
         thumbnailUrl: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=600&q=80",
         elements: [
             {
-                type: "sticky-note",
-                x: 100,
-                y: 150,
-                width: 130,
-                height: 130,
-                appearance: { fill: "#fef08a", stroke: "#eab308" },
-                content: "Discover:\n- Landing page visit\n- Docs inspection"
+                type: "text",
+                x: 50,
+                y: 40,
+                width: 600,
+                height: 50,
+                content: "Customer Journey Map - Enterprise Collaboration SaaS",
+                appearance: { fill: "#0f172a", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 250,
+                y: 100,
+                width: 200,
+                height: 30,
+                content: "1. Awareness",
+                appearance: { fill: "#0284c7", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 500,
+                y: 100,
+                width: 200,
+                height: 30,
+                content: "2. Consideration",
+                appearance: { fill: "#f97316", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 750,
+                y: 100,
+                width: 200,
+                height: 30,
+                content: "3. Onboarding",
+                appearance: { fill: "#8b5cf6", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 1000,
+                y: 100,
+                width: 200,
+                height: 30,
+                content: "4. Retention",
+                appearance: { fill: "#10b981", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 50,
+                y: 160,
+                width: 150,
+                height: 30,
+                content: "Activities",
+                appearance: { fill: "#475569", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 50,
+                y: 330,
+                width: 150,
+                height: 30,
+                content: "Pain Points",
+                appearance: { fill: "#475569", stroke: "none", strokeWidth: 0 }
+            },
+            {
+                type: "text",
+                x: 50,
+                y: 500,
+                width: 150,
+                height: 30,
+                content: "Delight Goals",
+                appearance: { fill: "#475569", stroke: "none", strokeWidth: 0 }
             },
             {
                 type: "sticky-note",
-                x: 270,
-                y: 150,
-                width: 130,
-                height: 130,
-                appearance: { fill: "#fed7aa", stroke: "#f97316" },
-                content: "Sign Up:\n- Form submit\n- Email validation"
+                x: 250,
+                y: 160,
+                width: 200,
+                height: 140,
+                content: "User reads a tech blog post about real-time diagramming tools.",
+                appearance: { fill: "#fef08a", stroke: "#eab308", strokeWidth: 1 }
             },
             {
                 type: "sticky-note",
-                x: 440,
-                y: 150,
-                width: 130,
-                height: 130,
-                appearance: { fill: "#bfdbfe", stroke: "#3b82f6" },
-                content: "Activation:\n- First canvas edit\n- Invite coworkers"
+                x: 500,
+                y: 160,
+                width: 200,
+                height: 140,
+                content: "Creates a free workspace and test-draws complex flowchart paths.",
+                appearance: { fill: "#fef08a", stroke: "#eab308", strokeWidth: 1 }
+            },
+            {
+                type: "sticky-note",
+                x: 750,
+                y: 160,
+                width: 200,
+                height: 140,
+                content: "Invites 3 team members to verify live multi-cursor speeds.",
+                appearance: { fill: "#fef08a", stroke: "#eab308", strokeWidth: 1 }
+            },
+            {
+                type: "sticky-note",
+                x: 1000,
+                y: 160,
+                width: 200,
+                height: 140,
+                content: "Integrates exports and builds diagrams for internal sprint specs.",
+                appearance: { fill: "#fef08a", stroke: "#eab308", strokeWidth: 1 }
+            },
+            {
+                type: "sticky-note",
+                x: 250,
+                y: 330,
+                width: 200,
+                height: 140,
+                content: "Hard to quickly estimate enterprise costs and billing.",
+                appearance: { fill: "#fecaca", stroke: "#f87171", strokeWidth: 1 }
+            },
+            {
+                type: "sticky-note",
+                x: 500,
+                y: 330,
+                width: 200,
+                height: 140,
+                content: "UI controls feel slightly confusing without an onboarding helper.",
+                appearance: { fill: "#fecaca", stroke: "#f87171", strokeWidth: 1 }
+            },
+            {
+                type: "sticky-note",
+                x: 750,
+                y: 330,
+                width: 200,
+                height: 140,
+                content: "Team member invitation links sometimes get marked as spam.",
+                appearance: { fill: "#fecaca", stroke: "#f87171", strokeWidth: 1 }
+            },
+            {
+                type: "sticky-note",
+                x: 1000,
+                y: 330,
+                width: 200,
+                height: 140,
+                content: "Requires continuous high resolution PNG exports.",
+                appearance: { fill: "#fecaca", stroke: "#f87171", strokeWidth: 1 }
+            },
+            {
+                type: "sticky-note",
+                x: 250,
+                y: 500,
+                width: 200,
+                height: 140,
+                content: "Include pricing slider and direct calendar call scheduler.",
+                appearance: { fill: "#d1fae5", stroke: "#34d399", strokeWidth: 1 }
+            },
+            {
+                type: "sticky-note",
+                x: 500,
+                y: 500,
+                width: 200,
+                height: 140,
+                content: "Provide a quick hands-on tutorial with guided paths.",
+                appearance: { fill: "#d1fae5", stroke: "#34d399", strokeWidth: 1 }
+            },
+            {
+                type: "sticky-note",
+                x: 750,
+                y: 500,
+                width: 200,
+                height: 140,
+                content: "Enable invite link generation direct to clipboard.",
+                appearance: { fill: "#d1fae5", stroke: "#34d399", strokeWidth: 1 }
+            },
+            {
+                type: "sticky-note",
+                x: 1000,
+                y: 500,
+                width: 200,
+                height: 140,
+                content: "Support instant high-fidelity local image downloads.",
+                appearance: { fill: "#d1fae5", stroke: "#34d399", strokeWidth: 1 }
             }
         ]
     },
@@ -197,31 +773,100 @@ const LOCAL_TEMPLATES: LocalTemplate[] = [
         thumbnailUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80",
         elements: [
             {
-                type: "rectangle",
-                x: 150,
-                y: 150,
-                width: 160,
-                height: 70,
-                appearance: { fill: "#eff6ff", stroke: "#1d4ed8", strokeWidth: 2 },
-                content: "Website Campaign"
+                type: "text",
+                x: 100,
+                y: 40,
+                width: 600,
+                height: 50,
+                content: "Omni-Channel Launch Marketing Plan",
+                appearance: { fill: "#0f172a", stroke: "none", strokeWidth: 0 }
             },
             {
-                type: "rectangle",
-                x: 360,
-                y: 150,
-                width: 160,
-                height: 70,
-                appearance: { fill: "#faf5ff", stroke: "#6b21a8", strokeWidth: 2 },
-                content: "Social Influencers"
+                id: "mkt_social",
+                type: "service-card",
+                x: 100,
+                y: 180,
+                width: 220,
+                height: 120,
+                title: "Social Media Campaigns",
+                description: "Promote launches on Twitter, LinkedIn, and YouTube.",
+                badge: "SERVICE",
+                appearance: { stroke: "#4285f4", fill: "#ffffff", strokeWidth: 4 }
             },
             {
-                type: "rectangle",
-                x: 570,
-                y: 150,
-                width: 160,
-                height: 70,
-                appearance: { fill: "#fdf2f8", stroke: "#9d174d", strokeWidth: 2 },
-                content: "Newsletter Blast"
+                id: "mkt_landing",
+                type: "service-card",
+                x: 400,
+                y: 300,
+                width: 220,
+                height: 120,
+                title: "Website Landing Page",
+                description: "Primary sign-up page featuring demo videos and CTA.",
+                badge: "API",
+                appearance: { stroke: "#34a853", fill: "#ffffff", strokeWidth: 4 }
+            },
+            {
+                id: "mkt_email",
+                type: "service-card",
+                x: 100,
+                y: 420,
+                width: 220,
+                height: 120,
+                title: "Email Newsletter Series",
+                description: "Send launch newsletter and onboarding drips.",
+                badge: "SERVICE",
+                appearance: { stroke: "#4285f4", fill: "#ffffff", strokeWidth: 4 }
+            },
+            {
+                id: "mkt_db",
+                type: "database-card",
+                x: 700,
+                y: 300,
+                width: 220,
+                height: 120,
+                title: "Marketing Leads Database",
+                description: "SQL Server holding trial registrations and lead scores.",
+                badge: "DATABASE",
+                appearance: { stroke: "#8B6914", fill: "#ffffff", strokeWidth: 4 }
+            },
+            {
+                type: "sticky-note",
+                x: 100,
+                y: 30,
+                width: 180,
+                height: 120,
+                content: "Weekly posts scheduled starting next Monday.",
+                appearance: { fill: "#fef3c7", stroke: "#f59e0b", strokeWidth: 1 }
+            },
+            {
+                type: "sticky-note",
+                x: 100,
+                y: 570,
+                width: 180,
+                height: 120,
+                content: "Draft email templates in Mailchimp by Friday.",
+                appearance: { fill: "#fef3c7", stroke: "#f59e0b", strokeWidth: 1 }
+            },
+            {
+                type: "arrow",
+                startElementId: "mkt_social",
+                endElementId: "mkt_landing",
+                points: [{ x: 100, y: 180 }, { x: 400, y: 300 }],
+                appearance: { stroke: "#64748b", strokeWidth: 2 }
+            },
+            {
+                type: "arrow",
+                startElementId: "mkt_email",
+                endElementId: "mkt_landing",
+                points: [{ x: 100, y: 420 }, { x: 400, y: 300 }],
+                appearance: { stroke: "#64748b", strokeWidth: 2 }
+            },
+            {
+                type: "arrow",
+                startElementId: "mkt_landing",
+                endElementId: "mkt_db",
+                points: [{ x: 400, y: 300 }, { x: 700, y: 300 }],
+                appearance: { stroke: "#64748b", strokeWidth: 2 }
             }
         ]
     }

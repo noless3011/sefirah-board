@@ -431,3 +431,40 @@
   border-color: #4285f4;
   box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.15);
 }
+
+/* ── Text Formatting buttons ── */
+
+.right-panel__format-group {
+  display: flex;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 2px;
+  width: 100%;
+}
+
+.right-panel__format-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  padding: 6px 0;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.right-panel__format-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+  color: #111827;
+}
+
+.right-panel__format-btn--active {
+  background: #ffffff;
+  color: #4285f4;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}

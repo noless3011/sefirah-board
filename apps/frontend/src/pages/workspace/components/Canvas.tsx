@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import type { CanvasElement } from "@sefirah/shared";
 import type { CollaboratorCursorInfo, ToolType } from "../types/canvas.types";
 import CanvasCard from "./canvas/CanvasCard";
@@ -15,6 +15,7 @@ interface CanvasProps {
     onUpdateElement: (id: string, changes: Partial<CanvasElement>) => void;
     collaboratorCursors: CollaboratorCursorInfo[];
     viewport: { x: number; y: number; zoom: number };
+    setViewport: React.Dispatch<React.SetStateAction<{ x: number; y: number; zoom: number }>>;
     onCanvasClick?: () => void;
     activeTool: ToolType;
     setActiveTool: (tool: ToolType) => void;
@@ -38,6 +39,7 @@ const Canvas: React.FC<CanvasProps> = ({
     onUpdateElement,
     collaboratorCursors,
     viewport,
+    setViewport,
     onCanvasClick,
     activeTool,
     setActiveTool,
@@ -61,6 +63,58 @@ const Canvas: React.FC<CanvasProps> = ({
             setEditingElementId(id);
         }
     };
+
+    // Sync viewport ref to avoid re-binding wheel event listener on every render
+    const viewportRef = useRef(viewport);
+    useEffect(() => {
+        viewportRef.current = viewport;
+    }, [viewport]);
+
+    // Non-passive native event listener to allow scroll-to-zoom and gesture panning
+    useEffect(() => {
+        const canvasEl = canvasRef.current;
+        if (!canvasEl) return;
+
+        const onWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            const rect = canvasEl.getBoundingClientRect();
+            if (!rect) return;
+
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const v = viewportRef.current;
+
+            // Pan horizontally if scrolling horizontally (trackpads)
+            if (e.deltaX !== 0 && !e.ctrlKey && !e.metaKey) {
+                setViewport((current) => ({
+                    ...current,
+                    x: current.x - e.deltaX,
+                    y: current.y - e.deltaY,
+                }));
+                return;
+            }
+
+            // Zoom directly on vertical scroll or pinch
+            const zoomStep = e.ctrlKey || e.metaKey ? 0.05 : 0.03;
+            const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+            const newZoom = Math.min(
+                Math.max(v.zoom + delta, 0.1),
+                5
+            );
+            const scale = newZoom / v.zoom;
+
+            setViewport({
+                x: mouseX - (mouseX - v.x) * scale,
+                y: mouseY - (mouseY - v.y) * scale,
+                zoom: newZoom,
+            });
+        };
+
+        canvasEl.addEventListener("wheel", onWheel, { passive: false });
+        return () => {
+            canvasEl.removeEventListener("wheel", onWheel);
+        };
+    }, [canvasRef, setViewport]);
 
     // Handle element dragging
     const draggingRef = useRef<{ id: string; startX: number; startY: number; initialX: number; initialY: number } | null>(null);
