@@ -46,3 +46,39 @@
     color: #6b7280;
     line-height: 1.4;
 }
+
+.canvas-card__edit-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.canvas-card__title-input {
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a2e;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 2px 4px;
+    outline: none;
+    background: #ffffff;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.canvas-card__desc-input {
+    font-family: inherit;
+    font-size: 13px;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 2px 4px;
+    outline: none;
+    background: #ffffff;
+    width: 100%;
+    min-height: 40px;
+    resize: none;
+    box-sizing: border-box;
+}

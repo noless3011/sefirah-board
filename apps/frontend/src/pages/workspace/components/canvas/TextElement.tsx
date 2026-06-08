@@ -6,12 +6,16 @@ interface TextElementProps {
     element: CanvasElement & { type: "text" };
     isSelected: boolean;
     onMouseDown: (e: React.MouseEvent) => void;
+    isEditing: boolean;
+    onEditComplete: (content: string) => void;
 }
 
 const TextElement: React.FC<TextElementProps> = ({
     element,
     isSelected,
     onMouseDown,
+    isEditing,
+    onEditComplete,
 }) => {
     return (
         <div
@@ -22,10 +26,43 @@ const TextElement: React.FC<TextElementProps> = ({
                 fontFamily: element.appearance.fontFamily || "inherit",
                 fontWeight: element.appearance.fontWeight || "normal",
                 textAlign: element.appearance.textAlign || "left",
+                cursor: isEditing ? "text" : "grab",
             }}
-            onMouseDown={onMouseDown}
+            onMouseDown={isEditing ? undefined : onMouseDown}
         >
-            {element.content}
+            {isEditing ? (
+                <textarea
+                    className="text-element__textarea-input"
+                    style={{
+                        width: "100%",
+                        height: "100%",
+                        border: "none",
+                        outline: "none",
+                        background: "transparent",
+                        color: element.appearance.fillColor || "#1a1a2e",
+                        resize: "none",
+                        fontFamily: "inherit",
+                        fontSize: "inherit",
+                        fontWeight: "inherit",
+                        textAlign: "inherit",
+                        padding: 0,
+                        margin: 0,
+                    }}
+                    defaultValue={element.content}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onBlur={(e) => onEditComplete(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            onEditComplete(e.currentTarget.value);
+                        }
+                    }}
+                    autoFocus
+                    onFocus={(e) => e.target.select()}
+                />
+            ) : (
+                element.content
+            )}
         </div>
     );
 };

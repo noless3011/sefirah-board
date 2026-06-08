@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import type { CanvasElement } from "@sefirah/shared";
 import type { CollaboratorCursorInfo, ToolType } from "../types/canvas.types";
 import { useCanvas } from "../hooks/useCanvas";
@@ -37,6 +37,15 @@ const Canvas: React.FC<CanvasProps> = ({
     onAddElement
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const [editingElementId, setEditingElementId] = useState<string | null>(null);
+
+    const handleElementDoubleClick = (e: React.MouseEvent, id: string) => {
+        if (activeTool === "select") {
+            e.stopPropagation();
+            setEditingElementId(id);
+        }
+    };
+
     const { handleWheel, startPan, movePan, endPan, isPanning, screenToCanvas } = useCanvas(containerRef);
 
     // Sync viewport state to hook's state
@@ -305,6 +314,7 @@ const Canvas: React.FC<CanvasProps> = ({
 
     const renderElement = (el: CanvasElement) => {
         const isSelected = selectedIds.includes(el.id);
+        const isEditing = editingElementId === el.id;
         
         switch (el.type) {
             case "service-card":
@@ -320,11 +330,17 @@ const Canvas: React.FC<CanvasProps> = ({
                             height: el.height,
                             zIndex: el.zIndex,
                         }}
+                        onDoubleClick={(e) => handleElementDoubleClick(e, el.id)}
                     >
                         <CanvasCard
                             element={el as any}
                             isSelected={isSelected}
                             onMouseDown={(e) => handleElementMouseDown(e, el.id)}
+                            isEditing={isEditing}
+                            onEditComplete={(changes) => {
+                                onUpdateElement(el.id, changes);
+                                setEditingElementId(null);
+                            }}
                         />
                     </div>
                 );
@@ -340,11 +356,17 @@ const Canvas: React.FC<CanvasProps> = ({
                             height: el.height,
                             zIndex: el.zIndex,
                         }}
+                        onDoubleClick={(e) => handleElementDoubleClick(e, el.id)}
                     >
                         <StickyNote
                             element={el as any}
                             isSelected={isSelected}
                             onMouseDown={(e) => handleElementMouseDown(e, el.id)}
+                            isEditing={isEditing}
+                            onEditComplete={(content) => {
+                                onUpdateElement(el.id, { content });
+                                setEditingElementId(null);
+                            }}
                         />
                     </div>
                 );
@@ -360,11 +382,17 @@ const Canvas: React.FC<CanvasProps> = ({
                             height: el.height,
                             zIndex: el.zIndex,
                         }}
+                        onDoubleClick={(e) => handleElementDoubleClick(e, el.id)}
                     >
                         <TextElement
                             element={el as any}
                             isSelected={isSelected}
                             onMouseDown={(e) => handleElementMouseDown(e, el.id)}
+                            isEditing={isEditing}
+                            onEditComplete={(content) => {
+                                onUpdateElement(el.id, { content });
+                                setEditingElementId(null);
+                            }}
                         />
                     </div>
                 );
