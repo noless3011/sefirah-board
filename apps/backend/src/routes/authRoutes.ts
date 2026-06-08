@@ -7,11 +7,13 @@ import {
     refreshToken,
     forgotPassword,
     resetPassword,
+    getAuthConfig,
 } from "../controllers/authController.js";
 
 const router = Router();
 
 // Domain: Authentication
+router.get("/config", getAuthConfig);
 router.post("/register", register);
 router.post("/login", login);
 router.post("/oauth/google", googleOAuth);
