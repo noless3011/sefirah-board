@@ -181,7 +181,7 @@ const Canvas: React.FC<CanvasProps> = ({
         if (activeTool === "pen" && isDrawingRef.current) {
             isDrawingRef.current = false;
             drawingLineIdRef.current = null;
-            setActiveTool("select");
+            // Keep pen tool active to allow continuous drawing of multiple strokes
         }
         draggingRef.current = null;
         initialPointsRef.current = null;
