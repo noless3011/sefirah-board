@@ -23,6 +23,8 @@ interface CanvasProps {
     onAddElement: (element: CanvasElement) => void;
     penColor?: string;
     penWidth?: number;
+    canvasBgColor?: string;
+    canvasGridStyle?: "dots" | "lines" | "none";
 }
 
 const Canvas: React.FC<CanvasProps> = ({
@@ -39,6 +41,8 @@ const Canvas: React.FC<CanvasProps> = ({
     onAddElement,
     penColor = "#4285f4",
     penWidth = 3,
+    canvasBgColor = "#f8f9fa",
+    canvasGridStyle = "dots",
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [editingElementId, setEditingElementId] = useState<string | null>(null);
@@ -409,6 +413,25 @@ const Canvas: React.FC<CanvasProps> = ({
     const lines = elements.filter(el => ['line', 'arrow', 'connector'].includes(el.type));
     const nodes = elements.filter(el => !['line', 'arrow', 'connector'].includes(el.type));
 
+    const isDarkBg = (color: string) => {
+        const hex = color.replace("#", "");
+        if (hex.length === 3 || hex.length === 6) {
+            const r = parseInt(hex.length === 3 ? hex[0]+hex[0] : hex.substring(0, 2), 16);
+            const g = parseInt(hex.length === 3 ? hex[1]+hex[1] : hex.substring(2, 4), 16);
+            const b = parseInt(hex.length === 3 ? hex[2]+hex[2] : hex.substring(4, 6), 16);
+            const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+            return yiq < 128;
+        }
+        return false;
+    };
+
+    const gridColor = isDarkBg(canvasBgColor) ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)";
+    const gridBackgroundImage = canvasGridStyle === "dots"
+        ? `radial-gradient(${gridColor} 1.5px, transparent 0)`
+        : canvasGridStyle === "lines"
+        ? `linear-gradient(to right, ${gridColor} 1px, transparent 1px), linear-gradient(to bottom, ${gridColor} 1px, transparent 1px)`
+        : "none";
+
     return (
         <div
             ref={containerRef}
@@ -419,6 +442,7 @@ const Canvas: React.FC<CanvasProps> = ({
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onContextMenu={(e) => e.preventDefault()}
+            style={{ backgroundColor: canvasBgColor }}
         >
             <div
                 className="canvas-surface"
@@ -427,7 +451,13 @@ const Canvas: React.FC<CanvasProps> = ({
                 }}
             >
                 {/* Background grid */}
-                <div className="canvas-grid" />
+                <div 
+                    className="canvas-grid" 
+                    style={{
+                        backgroundImage: gridBackgroundImage,
+                        backgroundSize: "20px 20px"
+                    }}
+                />
                 
                 {/* Connection lines */}
                 {lines.map((line) => (

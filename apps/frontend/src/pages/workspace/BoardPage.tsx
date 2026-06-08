@@ -6,6 +6,7 @@ import type { CanvasElementAppearance, Thread, CanvasElement, Board } from "@sef
 // Components
 import TopToolbar from "./components/TopToolbar";
 import ShareModal from "./components/ShareModal";
+import SettingsModal from "./components/SettingsModal";
 import LeftToolbar from "./components/LeftToolbar";
 import RightPanel from "./components/RightPanel";
 import ChatPanel from "./components/ChatPanel";
@@ -34,6 +35,21 @@ const BoardPage: React.FC = () => {
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [penColor, setPenColor] = useState("#4285f4");
     const [penWidth, setPenWidth] = useState(3);
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    const [canvasBgColor, setCanvasBgColor] = useState(() => {
+        return localStorage.getItem("sefirah-canvas-bg-color") || "#f8f9fa";
+    });
+    const [canvasGridStyle, setCanvasGridStyle] = useState<"dots" | "lines" | "none">(() => {
+        return (localStorage.getItem("sefirah-canvas-grid-style") as "dots" | "lines" | "none") || "dots";
+    });
+
+    useEffect(() => {
+        localStorage.setItem("sefirah-canvas-bg-color", canvasBgColor);
+    }, [canvasBgColor]);
+
+    useEffect(() => {
+        localStorage.setItem("sefirah-canvas-grid-style", canvasGridStyle);
+    }, [canvasGridStyle]);
 
     const socket = useSocket();
     
@@ -237,8 +253,7 @@ const BoardPage: React.FC = () => {
             <LeftToolbar
                 activeTool={activeTool}
                 onToolChange={setActiveTool}
-                onHistoryClick={() => alert("History panel not fully implemented")}
-                onSettingsClick={() => alert("Settings panel not fully implemented")}
+                onSettingsClick={() => setIsSettingsModalOpen(true)}
             />
 
             <div className="board-page__center">
@@ -258,6 +273,8 @@ const BoardPage: React.FC = () => {
                     onAddElement={handleAddElementDirect}
                     penColor={penColor}
                     penWidth={penWidth}
+                    canvasBgColor={canvasBgColor}
+                    canvasGridStyle={canvasGridStyle}
                 />
             </div>
 
@@ -306,6 +323,17 @@ const BoardPage: React.FC = () => {
                     boardId={boardId!}
                     ownerId={board.ownerId}
                     onClose={() => setIsShareModalOpen(false)}
+                />
+            )}
+
+            {isSettingsModalOpen && (
+                <SettingsModal
+                    isOpen={isSettingsModalOpen}
+                    onClose={() => setIsSettingsModalOpen(false)}
+                    canvasBgColor={canvasBgColor}
+                    onCanvasBgColorChange={setCanvasBgColor}
+                    canvasGridStyle={canvasGridStyle}
+                    onCanvasGridStyleChange={setCanvasGridStyle}
                 />
             )}
         </div>
