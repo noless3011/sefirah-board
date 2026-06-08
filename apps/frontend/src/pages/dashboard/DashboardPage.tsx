@@ -140,14 +140,14 @@ const MOCK_BOARDS: Board[] = [
 const BoardThumbnail: React.FC<{ title: string; thumbnailUrl: string | null }> = ({ title, thumbnailUrl }) => {
     if (thumbnailUrl) {
         return (
-            <div className="w-full h-40 bg-slate-100 overflow-hidden relative border-b border-slate-100">
+            <div className="w-full h-40 bg-slate-100 overflow-hidden rounded-t-2xl relative border-b border-slate-100">
                 <img src={thumbnailUrl} alt={title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
             </div>
         );
     }
 
     return (
-        <div className="w-full h-40 bg-[#F8FAFC] relative overflow-hidden border-b border-slate-100 flex items-center justify-center group-hover:bg-[#F1F5F9] transition-colors duration-200">
+        <div className="w-full h-40 bg-[#F8FAFC] relative overflow-hidden rounded-t-2xl border-b border-slate-100 flex items-center justify-center group-hover:bg-[#F1F5F9] transition-colors duration-200">
             {/* Dot grid pattern */}
             <div className="absolute inset-0 opacity-[0.4]" style={{
                 backgroundImage: 'radial-gradient(#CBD5E1 1px, transparent 1px)',
@@ -414,7 +414,7 @@ const BoardCard: React.FC<BoardCardProps> = ({
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             style={tiltStyle}
-            className="bg-white border border-slate-100 rounded-2xl overflow-hidden flex flex-col cursor-pointer group relative transform-gpu"
+            className="bg-white border border-slate-100 rounded-2xl flex flex-col cursor-pointer group relative transform-gpu"
         >
             {/* Card Header Badge Overlay */}
             {board.badge && (
