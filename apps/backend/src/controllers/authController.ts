@@ -27,7 +27,7 @@ import {
     isRecord,
 } from "../utils/controllerUtils.js";
 
-const ACCESS_TOKEN_TTL = "15m";
+const ACCESS_TOKEN_TTL = "30d";
 const DEFAULT_REFRESH_TOKEN_DAYS = 7;
 const REMEMBER_ME_REFRESH_TOKEN_DAYS = 30;
 const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
