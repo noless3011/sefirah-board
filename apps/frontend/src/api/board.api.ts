@@ -1,6 +1,7 @@
 import axiosClient from "./axiosClient";
 import type {
     GetCanvasElementsResponse,
+    GetBoardsResponse,
     Board,
     Thread,
     ThreadReply,
@@ -9,6 +10,10 @@ import type {
 } from "@sefirah/shared";
 
 export const boardApi = {
+    /** GET /boards — List boards for the dashboard */
+    getBoards: (params?: { type?: "personal" | "shared"; search?: string; page?: number; limit?: number }) =>
+        axiosClient.get<GetBoardsResponse>(`/boards`, { params }).then((r) => r.data),
+
     /** GET /boards/:boardId — Fetch board metadata */
     getBoard: (boardId: string) =>
         axiosClient.get<Board>(`/boards/${boardId}`).then((r) => r.data),
@@ -17,9 +22,13 @@ export const boardApi = {
     createBoard: (data: { title: string; templateId?: string }) =>
         axiosClient.post<Board>(`/boards`, data).then((r) => r.data),
 
-    /** PATCH /boards/:boardId — Update board (title, etc.) */
-    updateBoard: (boardId: string, data: Partial<Pick<Board, "title">>) =>
+    /** PATCH /boards/:boardId — Update board (title, badge, visibility, etc.) */
+    updateBoard: (boardId: string, data: Partial<Pick<Board, "title" | "badge" | "visibilityIcon" | "status">>) =>
         axiosClient.patch<Board>(`/boards/${boardId}`, data).then((r) => r.data),
+
+    /** DELETE /boards/:boardId — Delete a board */
+    deleteBoard: (boardId: string) =>
+        axiosClient.delete(`/boards/${boardId}`).then((r) => r.data),
 
     /** POST /boards/:boardId/export — Export board canvas */
     exportBoard: (boardId: string, format: "png" | "pdf" | "svg") =>
