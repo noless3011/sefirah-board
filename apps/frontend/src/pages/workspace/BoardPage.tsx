@@ -224,7 +224,7 @@ const BoardPage: React.FC = () => {
             }
         });
     };
-
+    // FIX: Bỏ setThreads ở đây - socket sẽ tự cập nhật qua handleThreadCreated
     const handleSendMessage = async (message: string, targetElementId?: string) => {
         try {
             const target = targetElementId || selectedIds[0];
@@ -232,22 +232,16 @@ const BoardPage: React.FC = () => {
                 targetElementId: target || undefined,
                 message
             });
-            setThreads(prev => [...prev, newThread]);
+    
         } catch (err) {
             console.error("Failed to create thread", err);
         }
     };
-
+// FIX: Bỏ setThreads ở đây - socket sẽ tự cập nhật qua handleReplyCreated
     const handleReply = async (threadId: string, message: string) => {
         try {
-            const newReply = await threadApi.replyToThread(boardId!, threadId, { message });
-            setThreads(prev =>
-                prev.map(t =>
-                    t.id === threadId
-                        ? { ...t, replies: [...(t.replies || []), newReply] }
-                        : t
-                )
-            );
+             await threadApi.replyToThread(boardId!, threadId, { message });
+            
         } catch (err) {
             console.error("Failed to reply", err);
         }
