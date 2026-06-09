@@ -26,7 +26,8 @@ export type ToolType =
     | "sticky"
     | "text"
     | "connector"
-    | "hand";
+    | "hand"
+    | "eraser";
 
 // ── Collaboration (UI-only, derived from socket events) ──────
 export interface CollaboratorCursorInfo {

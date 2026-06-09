@@ -6,7 +6,8 @@ const MAX_HISTORY = 100;
 
 export function useCanvasHistory(
     _elements: CanvasElement[],
-    setElements: React.Dispatch<React.SetStateAction<CanvasElement[]>>
+    setElements: React.Dispatch<React.SetStateAction<CanvasElement[]>>,
+    onUndoRedo?: (from: CanvasElement[], to: CanvasElement[]) => void
 ) {
     const [history, setHistory] = useState<HistoryEntry[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
@@ -46,23 +47,29 @@ export function useCanvasHistory(
         if (!canUndo) return;
         isUndoRedo.current = true;
         const entry = history[historyIndex];
+        if (onUndoRedo) {
+            onUndoRedo(entry.elementsAfter, entry.elementsBefore);
+        }
         setElements(entry.elementsBefore);
         setHistoryIndex((i) => i - 1);
         requestAnimationFrame(() => {
             isUndoRedo.current = false;
         });
-    }, [canUndo, history, historyIndex, setElements]);
+    }, [canUndo, history, historyIndex, setElements, onUndoRedo]);
 
     const redo = useCallback(() => {
         if (!canRedo) return;
         isUndoRedo.current = true;
         const entry = history[historyIndex + 1];
+        if (onUndoRedo) {
+            onUndoRedo(entry.elementsBefore, entry.elementsAfter);
+        }
         setElements(entry.elementsAfter);
         setHistoryIndex((i) => i + 1);
         requestAnimationFrame(() => {
             isUndoRedo.current = false;
         });
-    }, [canRedo, history, historyIndex, setElements]);
+    }, [canRedo, history, historyIndex, setElements, onUndoRedo]);
 
     return { canUndo, canRedo, undo, redo, pushHistory };
 }

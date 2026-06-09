@@ -67,6 +67,7 @@ const ConnectionLine: React.FC<ConnectionLineProps> = ({
 
     return (
         <svg
+            data-element-id={element.id}
             className={`connection-line ${isSelected ? "connection-line--selected" : ""}`}
             style={{
                 position: "absolute",

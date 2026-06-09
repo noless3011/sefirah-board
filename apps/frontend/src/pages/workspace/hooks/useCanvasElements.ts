@@ -4,7 +4,10 @@ import type { ToolType } from "../types/canvas.types";
 import { canvasApi } from "../../../api/board.api";
 import { useCanvasHistory } from "./useCanvasHistory";
 
-export function useCanvasElements(boardId: string) {
+export function useCanvasElements(
+    boardId: string,
+    onUndoRedo?: (from: CanvasElement[], to: CanvasElement[]) => void
+) {
     const [elements, setElements] = useState<CanvasElement[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [activeTool, setActiveTool] = useState<ToolType>("select");
@@ -14,7 +17,8 @@ export function useCanvasElements(boardId: string) {
 
     const { canUndo, canRedo, undo, redo, pushHistory } = useCanvasHistory(
         elements,
-        setElements
+        setElements,
+        onUndoRedo
     );
 
     useEffect(() => {
@@ -70,16 +74,18 @@ export function useCanvasElements(boardId: string) {
     }, [elements, boardId, loading]);
 
     const addElement = useCallback(
-        (element: CanvasElement) => {
+        (element: CanvasElement, skipHistory = false) => {
             const before = [...elementsRef.current];
             setElements((prev) => [...prev, element]);
-            pushHistory("add", before, [...before, element]);
+            if (!skipHistory) {
+                pushHistory("add", before, [...before, element]);
+            }
         },
         [pushHistory]
     );
 
     const updateElement = useCallback(
-        (id: string, changes: Partial<CanvasElement>) => {
+        (id: string, changes: Partial<CanvasElement>, skipHistory = false) => {
             const before = [...elementsRef.current];
             setElements((prev) =>
                 prev.map((el) =>
@@ -89,20 +95,24 @@ export function useCanvasElements(boardId: string) {
             const after = before.map((el) =>
                 el.id === id ? ({ ...el, ...changes } as CanvasElement) : el
             );
-            pushHistory("update", before, after);
+            if (!skipHistory) {
+                pushHistory("update", before, after);
+            }
         },
         [pushHistory]
     );
 
     const deleteElement = useCallback(
-        (id: string) => {
+        (id: string, skipHistory = false) => {
             const before = [...elementsRef.current];
             setElements((prev) => prev.filter((el) => el.id !== id));
-            pushHistory(
-                "remove",
-                before,
-                before.filter((el) => el.id !== id)
-            );
+            if (!skipHistory) {
+                pushHistory(
+                    "remove",
+                    before,
+                    before.filter((el) => el.id !== id)
+                );
+            }
             setSelectedIds((prev) => prev.filter((sid) => sid !== id));
         },
         [pushHistory]
@@ -147,5 +157,6 @@ export function useCanvasElements(boardId: string) {
         canRedo,
         undo,
         redo,
+        pushHistory,
     };
 }
