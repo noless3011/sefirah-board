@@ -103,14 +103,16 @@ export function useCanvasElements(
     );
 
     const deleteElement = useCallback(
-        (id: string) => {
+        (id: string, skipHistory = false) => {
             const before = [...elementsRef.current];
             setElements((prev) => prev.filter((el) => el.id !== id));
-            pushHistory(
-                "remove",
-                before,
-                before.filter((el) => el.id !== id)
-            );
+            if (!skipHistory) {
+                pushHistory(
+                    "remove",
+                    before,
+                    before.filter((el) => el.id !== id)
+                );
+            }
             setSelectedIds((prev) => prev.filter((sid) => sid !== id));
         },
         [pushHistory]

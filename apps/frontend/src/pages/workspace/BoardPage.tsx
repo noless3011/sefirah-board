@@ -708,6 +708,10 @@ const BoardPage: React.FC = () => {
                         updateElement(id, changes, skipHistory);
                         emitElementUpdate(id, changes);
                     }}
+                    onDeleteElement={(id, skipHistory) => {
+                        deleteElement(id, skipHistory);
+                        emitElementDelete(id);
+                    }}
                     collaboratorCursors={cursors}
                     viewport={viewport}
                     setViewport={setViewport}
