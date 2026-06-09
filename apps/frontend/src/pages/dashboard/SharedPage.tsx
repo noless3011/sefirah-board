@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sharedService } from '../../services/shared.service';
 import type { Board } from '@sefirah/shared';
+import { BoardCard } from './BoardCard';
 
 export default function SharedPage() {
   const [boards, setBoards] = useState<Board[]>([]);
@@ -27,168 +28,73 @@ export default function SharedPage() {
   );
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+    <div className="p-8 max-w-[1400px] mx-auto font-sans">
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+      {/* Header and Search */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '-0.02em' }}>
+          <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
             Shared with me
           </h2>
-          <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>
+          <p className="text-slate-500 text-sm mt-1">
             Collaborative workspaces shared with you by other team members.
           </p>
         </div>
 
-        <div style={{ position: 'relative', width: '320px' }}>
+        <div className="relative w-full sm:w-80">
           <input 
             type="text" 
             placeholder="Search boards..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ 
-              width: '100%', 
-              padding: '10px 16px', 
-              borderRadius: '10px', 
-              border: '1px solid #e2e8f0', 
-              fontSize: '14px', 
-              outline: 'none', 
-              background: '#f8fafc',
-              transition: 'all 0.2s ease', 
-              boxSizing: 'border-box' 
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#2563eb';
-              e.target.style.background = '#fff';
-              e.target.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.1)';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#e2e8f0';
-              e.target.style.background = '#f8fafc';
-              e.target.style.boxShadow = 'none';
-            }}
+            className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 outline-none text-sm transition-all focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-50"
           />
+          <div className="absolute right-3 top-3 text-slate-400 pointer-events-none">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '100px 0' }}>
-          <div style={{ width: '24px', height: '24px', border: '2.5px solid #f1f5f9', borderTopColor: '#2563eb', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }}></div>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '12px', fontWeight: '500' }}>Loading workspaces...</p>
+        /* Skeleton Loader */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-white border border-slate-100 rounded-2xl h-64 flex flex-col overflow-hidden">
+              <div className="h-40 bg-slate-100" />
+              <div className="p-4 flex-1 flex flex-col justify-between">
+                <div className="h-4 bg-slate-200 rounded w-2/3" />
+                <div className="flex items-center justify-between mt-2">
+                  <div className="h-5 bg-slate-100 rounded w-16" />
+                  <div className="h-4 bg-slate-100 rounded-full w-4" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : filteredItems.length === 0 ? (
-        
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          padding: '100px 24px', 
-          background: '#ffffff', 
-          borderRadius: '16px', 
-          border: '1px dashed #cbd5e1',
-          textAlign: 'center'
-        }}>
-          <div style={{ width: '64px', height: '64px', background: '#f0f5ff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        /* Empty Search/List State */
+        <div className="flex flex-col items-center justify-center p-16 bg-white border border-dashed border-slate-200 rounded-2xl text-center shadow-sm">
+          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-7 h-7 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
           </div>
-          <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b', margin: '0 0 6px 0' }}>
-            No results match your search
-          </h3>
-          <p style={{ color: '#64748b', fontSize: '14px', maxWidth: '380px', margin: 0, lineHeight: '1.5' }}>
-            Try adjusting your keywords or search terms to find the collaborative boards.
+          <h3 className="font-bold text-slate-800 text-lg">No shared boards found</h3>
+          <p className="text-slate-400 text-sm mt-1 max-w-sm">
+            {searchQuery ? `No boards match your search "${searchQuery}".` : "Workspaces shared with you by other team members will appear here."}
           </p>
         </div>
       ) : (
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-          {filteredItems.map((item) => (
-            <div 
-              key={item.id} 
-              onClick={() => {
-                navigate(`/board/${item.id}`);
-              }}
-              style={{ 
-                border: '1px solid #e2e8f0', 
-                padding: '16px', 
-                borderRadius: '16px', 
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01)', 
-                cursor: 'pointer', 
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
-                background: '#fff',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-6px)';
-                e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 10px 10px -5px rgba(15, 23, 42, 0.04)';
-                e.currentTarget.style.borderColor = '#cbd5e1';
-                const imgBox = e.currentTarget.firstChild as HTMLElement;
-                if (imgBox && imgBox.firstChild) {
-                  (imgBox.firstChild as HTMLElement).style.transform = 'scale(1.04)';
-                }
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.02)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
-                const imgBox = e.currentTarget.firstChild as HTMLElement;
-                if (imgBox && imgBox.firstChild) {
-                  (imgBox.firstChild as HTMLElement).style.transform = 'scale(1)';
-                }
-              }}
-            >
-              <div style={{ 
-                height: '180px', 
-                borderRadius: '12px', 
-                marginBottom: '16px', 
-                overflow: 'hidden', 
-                border: '1px solid #f1f5f9',
-                background: '#f8fafc',
-                position: 'relative'
-              }}>
-                <img 
-                  src={item.thumbnailUrl || undefined} 
-                  alt=""
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    const parent = e.currentTarget.parentElement;
-                    if(parent) {
-                      parent.style.backgroundImage = 'radial-gradient(#cbd5e1 1.5px, transparent 1.5px)';
-                      parent.style.backgroundSize = '16px 16px';
-                      parent.style.backgroundColor = '#f8fafc';
-                    }
-                  }}
-                  style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: 'cover', 
-                    transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' 
-                  }} 
-                />
-              </div>
-
-              <h3 style={{ fontSize: '16px', margin: '0 0 6px 0', fontWeight: '600', color: '#0f172a', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {item.title}
-              </h3>
-              
-              <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 16px 0' }}>
-                Last updated {new Date(item.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </p>
-              
-              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '13px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ display: 'inline-block', width: '24px', height: '24px', borderRadius: '50%', background: '#eff6ff', color: '#2563eb', textAlign: 'center', lineHeight: '24px', fontWeight: '600', fontSize: '11px' }}>
-                  {(item.sharedBy?.fullName || 'U').charAt(0).toUpperCase()}
-                </span>
-                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  Shared by <strong style={{ color: '#334155', fontWeight: '500' }}>{item.sharedBy?.fullName || 'Team Member'}</strong>
-                </span>
-              </div>
-            </div>
+        /* Grid of boards */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredItems.map((board) => (
+            <BoardCard
+              key={board.id}
+              board={board}
+              navigate={navigate}
+            />
           ))}
         </div>
       )}
