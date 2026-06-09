@@ -410,11 +410,12 @@ const DashboardLayout: React.FC = () => {
                         {/* Divider — ẩn trên mobile */}
                         <div className="hidden sm:block h-6 w-px bg-slate-200" />
 
-                        {/* Create New Board — icon only trên mobile, full text trên desktop */}
+                        {/* Create New Board — icon only */}
                         <button
                             onClick={handleCreateBoard}
                             disabled={isCreating}
-                            className={`flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-blue-700 shadow-sm ${isCreating ? "opacity-70 cursor-not-allowed" : ""}`}
+                            className={`flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 shadow-sm ${isCreating ? "opacity-70 cursor-not-allowed" : ""}`}
+                            title="Create New Board"
                         >
                             {isCreating ? (
                                 <svg
@@ -451,10 +452,6 @@ const DashboardLayout: React.FC = () => {
                                     />
                                 </svg>
                             )}
-                            {/* Text ẩn trên mobile */}
-                            <span className="hidden sm:inline whitespace-nowrap">
-                                Create New Board
-                            </span>
                         </button>
 
                         {/* Avatar & User Dropdown */}
