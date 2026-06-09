@@ -1,44 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sharedService } from '../../services/shared.service';
-
-interface SharedBoard {
-  id: string;
-  title: string;
-  updatedAt: string;
-  thumbnailUrl: string; 
-  owner: {
-    name: string;
-    email: string;
-  };
-}
-
-const INITIAL_PREVIEW_BOARDS: SharedBoard[] = [
-  {
-    id: "preview-board-1",
-    title: "E-Commerce Mobile App Redesign",
-    updatedAt: new Date(Date.now() - 2 * 3600000).toISOString(),
-    thumbnailUrl: "https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?auto=format&fit=crop&w=600&q=80", 
-    owner: { name: "Alex Johnson", email: "alex@example.com" }
-  },
-  {
-    id: "preview-board-2",
-    title: "Onboarding Process Diagram",
-    updatedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
-    thumbnailUrl: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=600&q=80", 
-    owner: { name: "Sarah Connor", email: "sarah@example.com" }
-  },
-  {
-    id: "preview-board-3",
-    title: "Product Launch Scrum Plan",
-    updatedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-    thumbnailUrl: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&q=80", 
-    owner: { name: "David Miller", email: "david@example.com" }
-  }
-];
+import type { Board } from '@sefirah/shared';
 
 export default function SharedPage() {
-  const [boards, setBoards] = useState<SharedBoard[]>([]);
+  const [boards, setBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const navigate = useNavigate();
@@ -46,20 +12,12 @@ export default function SharedPage() {
   useEffect(() => {
     sharedService.getSharedBoards()
       .then(data => {
-        if (!data || data.length === 0) {
-          setBoards(INITIAL_PREVIEW_BOARDS);
-        } else {
-          const dynamicallyShared = data.map((item: any, idx: number) => ({
-            ...item,
-            thumbnailUrl: item.thumbnailUrl || INITIAL_PREVIEW_BOARDS[idx % 3].thumbnailUrl
-          }));
-          setBoards([...dynamicallyShared, ...INITIAL_PREVIEW_BOARDS]);
-        }
+        setBoards(data || []);
         setLoading(false);
       })
       .catch(err => {
         console.error(err);
-        setBoards(INITIAL_PREVIEW_BOARDS);
+        setBoards([]);
         setLoading(false);
       });
   }, []);
@@ -152,16 +110,14 @@ export default function SharedPage() {
             <div 
               key={item.id} 
               onClick={() => {
-                if(!item.id.startsWith('preview-board')) {
-                  navigate(`/board/${item.id}`);
-                }
+                navigate(`/board/${item.id}`);
               }}
               style={{ 
                 border: '1px solid #e2e8f0', 
                 padding: '16px', 
                 borderRadius: '16px', 
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01)', 
-                cursor: item.id.startsWith('preview-board') ? 'default' : 'pointer', 
+                cursor: 'pointer', 
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
                 background: '#fff',
                 position: 'relative',
@@ -196,7 +152,7 @@ export default function SharedPage() {
                 position: 'relative'
               }}>
                 <img 
-                  src={item.thumbnailUrl} 
+                  src={item.thumbnailUrl || undefined} 
                   alt=""
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
@@ -226,10 +182,10 @@ export default function SharedPage() {
               
               <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '13px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ display: 'inline-block', width: '24px', height: '24px', borderRadius: '50%', background: '#eff6ff', color: '#2563eb', textAlign: 'center', lineHeight: '24px', fontWeight: '600', fontSize: '11px' }}>
-                  {(item.owner?.name || 'U').charAt(0).toUpperCase()}
+                  {(item.sharedBy?.fullName || 'U').charAt(0).toUpperCase()}
                 </span>
                 <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  Shared by <strong style={{ color: '#334155', fontWeight: '500' }}>{item.owner?.name || 'Team Member'}</strong>
+                  Shared by <strong style={{ color: '#334155', fontWeight: '500' }}>{item.sharedBy?.fullName || 'Team Member'}</strong>
                 </span>
               </div>
             </div>
