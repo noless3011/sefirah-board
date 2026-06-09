@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import type { Board } from "@sefirah/shared";
 
 // =============================================================================
@@ -119,12 +119,32 @@ export const BoardCard: React.FC<BoardCardProps> = ({
     onDelete,
     onLeave
 }) => {
+    const cardRef = useRef<HTMLDivElement>(null);
     const [tiltStyle, setTiltStyle] = useState<React.CSSProperties>({
         transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
         transformStyle: 'preserve-3d',
         boxShadow: '0 8px 24px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.08)',
         transition: 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1)'
     });
+
+    useEffect(() => {
+        if (activeMenuId !== board.id) return;
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+                setActiveMenuId?.(null);
+            }
+        };
+
+        const timer = setTimeout(() => {
+            document.addEventListener("click", handleClickOutside);
+        }, 0);
+
+        return () => {
+            clearTimeout(timer);
+            document.removeEventListener("click", handleClickOutside);
+        };
+    }, [activeMenuId, board.id, setActiveMenuId]);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         const card = e.currentTarget;
@@ -162,6 +182,7 @@ export const BoardCard: React.FC<BoardCardProps> = ({
 
     return (
         <div 
+            ref={cardRef}
             onClick={() => navigate(`/board/${board.id}`)}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
@@ -225,9 +246,7 @@ export const BoardCard: React.FC<BoardCardProps> = ({
 
                                 {/* Dropped popup list */}
                                 {activeMenuId === board.id && (
-                                    <>
-                                        <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }} />
-                                        <div className="absolute right-0 mt-1 w-44 rounded-xl border border-slate-150 bg-white p-1.5 shadow-lg ring-1 ring-black/5 z-30">
+                                    <div className="absolute right-0 mt-1 w-44 rounded-xl border border-slate-150 bg-white p-1.5 shadow-lg ring-1 ring-black/5 z-30">
                                             {isOwner && onRename && (
                                                 <button 
                                                     onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); onRename(board); }}
@@ -268,8 +287,7 @@ export const BoardCard: React.FC<BoardCardProps> = ({
                                                     Leave Board
                                                 </button>
                                             )}
-                                        </div>
-                                    </>
+                                    </div>
                                 )}
                             </div>
                         )}

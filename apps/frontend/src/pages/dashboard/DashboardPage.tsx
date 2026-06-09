@@ -547,7 +547,7 @@ const DashboardPage: React.FC = () => {
                             board={board}
                             navigate={navigate}
                             activeMenuId={activeMenuId}
-                            setActiveMenuId={setActiveMenuId}
+                            setActiveMenuId={board.type === "personal" ? setActiveMenuId : undefined}
                             onRename={(b) => setModal({ type: "rename", board: b })}
                             onVisibility={(b) => setModal({ type: "visibility", board: b })}
                             onBadge={(b) => setModal({ type: "badge", board: b })}
