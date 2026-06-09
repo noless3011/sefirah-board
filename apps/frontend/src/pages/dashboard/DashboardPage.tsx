@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { boardApi } from "../../api/board.api";
+import { boardApi, collaborationApi } from "../../api/board.api";
+import { accountSettingsApi } from "../../api/accountSettings.api";
 import type { Board } from "@sefirah/shared";
 import { 
     BoardCard, 
@@ -288,10 +289,11 @@ const DashboardPage: React.FC = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+    const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
 
     // Modal Control State
     const [modal, setModal] = useState<{
-        type: "rename" | "visibility" | "badge" | null;
+        type: "rename" | "visibility" | "badge" | "leave" | null;
         board: Board | null;
     }>({ type: null, board: null });
 
@@ -325,6 +327,16 @@ const DashboardPage: React.FC = () => {
     useEffect(() => {
         loadBoards();
     }, [searchQuery]);
+
+    useEffect(() => {
+        accountSettingsApi.getMe()
+            .then(res => {
+                setCurrentUser(res.data);
+            })
+            .catch(err => {
+                console.error("Failed to fetch current user profile", err);
+            });
+    }, []);
 
     const handleCreateBoard = async () => {
         setIsCreating(true);
@@ -422,6 +434,18 @@ const DashboardPage: React.FC = () => {
             console.error("Failed to update badge:", err);
         } finally {
             setModal({ type: null, board: null });
+        }
+    };
+
+    const handleLeaveConfirm = async () => {
+        if (!modal.board || !currentUser) return;
+        try {
+            await collaborationApi.removeCollaborator(modal.board.id, currentUser.id);
+            setBoards(prev => prev.filter(b => b.id !== modal.board!.id));
+            setModal({ type: null, board: null });
+        } catch (error) {
+            console.error("Failed to leave board", error);
+            alert("Failed to leave the board. Please try again.");
         }
     };
 
@@ -547,11 +571,12 @@ const DashboardPage: React.FC = () => {
                             board={board}
                             navigate={navigate}
                             activeMenuId={activeMenuId}
-                            setActiveMenuId={board.type === "personal" ? setActiveMenuId : undefined}
+                            setActiveMenuId={setActiveMenuId}
                             onRename={(b) => setModal({ type: "rename", board: b })}
                             onVisibility={(b) => setModal({ type: "visibility", board: b })}
                             onBadge={(b) => setModal({ type: "badge", board: b })}
                             onDelete={handleDelete}
+                            onLeave={(b) => setModal({ type: "leave", board: b })}
                         />
                     ))}
                 </div>
@@ -644,53 +669,62 @@ const DashboardPage: React.FC = () => {
                                 </span>
                                 
                                 {/* Row actions button */}
-                                {board.type === "personal" && (
-                                    <div className="relative">
-                                        <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setActiveMenuId(activeMenuId === board.id ? null : board.id);
-                                            }}
-                                            className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400 hover:text-slate-700 transition cursor-pointer"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                            </svg>
-                                        </button>
-                                        
-                                        {activeMenuId === board.id && (
-                                            <>
-                                                <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }} />
-                                                <div className="absolute right-0 mt-1 w-44 rounded-xl border border-slate-150 bg-white p-1.5 shadow-lg ring-1 ring-black/5 z-30">
+                                <div className="relative">
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveMenuId(activeMenuId === board.id ? null : board.id);
+                                        }}
+                                        className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                        </svg>
+                                    </button>
+                                    
+                                    {activeMenuId === board.id && (
+                                        <>
+                                            <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }} />
+                                            <div className="absolute right-0 mt-1 w-44 rounded-xl border border-slate-150 bg-white p-1.5 shadow-lg ring-1 ring-black/5 z-30">
+                                                {board.type === "personal" ? (
+                                                    <>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); setModal({ type: "rename", board }); }}
+                                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                                                        >
+                                                            Rename
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); setModal({ type: "visibility", board }); }}
+                                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                                                        >
+                                                            Visibility...
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); setModal({ type: "badge", board }); }}
+                                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                                                        >
+                                                            Change Badge...
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); handleDelete(board.id); }}
+                                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50/70 transition cursor-pointer"
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </>
+                                                ) : (
                                                     <button 
-                                                        onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); setModal({ type: "rename", board }); }}
-                                                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-                                                    >
-                                                        Rename
-                                                    </button>
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); setModal({ type: "visibility", board }); }}
-                                                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-                                                    >
-                                                        Visibility...
-                                                    </button>
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); setModal({ type: "badge", board }); }}
-                                                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-                                                    >
-                                                        Change Badge...
-                                                    </button>
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); handleDelete(board.id); }}
+                                                        onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); setModal({ type: "leave", board }); }}
                                                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50/70 transition cursor-pointer"
                                                     >
-                                                        Delete
+                                                        Leave Board
                                                     </button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                )}
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -719,6 +753,44 @@ const DashboardPage: React.FC = () => {
                     onSave={handleBadgeSave}
                 />
             )}
+            {modal.type === "leave" && modal.board && (
+                <LeaveConfirmModal 
+                    board={modal.board} 
+                    onClose={() => setModal({ type: null, board: null })} 
+                    onConfirm={handleLeaveConfirm}
+                />
+            )}
+        </div>
+    );
+};
+
+const LeaveConfirmModal = ({ board, onClose, onConfirm }: {
+    board: Board;
+    onClose: () => void;
+    onConfirm: () => void;
+}) => {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-xl border border-slate-100 animate-in fade-in zoom-in duration-200">
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Leave Board</h3>
+                <p className="text-slate-500 text-sm mb-6 leading-relaxed font-sans">
+                    Are you sure you want to leave <strong className="text-slate-800 font-semibold">"{board.title}"</strong>? You will lose access to this workspace and will need a new invite to rejoin.
+                </p>
+                <div className="flex justify-end gap-3 font-sans">
+                    <button 
+                        onClick={onClose}
+                        className="px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-50 text-sm font-medium transition cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={onConfirm}
+                        className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium transition shadow-sm cursor-pointer"
+                    >
+                        Leave Board
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };
