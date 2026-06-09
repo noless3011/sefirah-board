@@ -4,7 +4,10 @@ import type { ToolType } from "../types/canvas.types";
 import { canvasApi } from "../../../api/board.api";
 import { useCanvasHistory } from "./useCanvasHistory";
 
-export function useCanvasElements(boardId: string) {
+export function useCanvasElements(
+    boardId: string,
+    onUndoRedo?: (from: CanvasElement[], to: CanvasElement[]) => void
+) {
     const [elements, setElements] = useState<CanvasElement[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [activeTool, setActiveTool] = useState<ToolType>("select");
@@ -14,7 +17,8 @@ export function useCanvasElements(boardId: string) {
 
     const { canUndo, canRedo, undo, redo, pushHistory } = useCanvasHistory(
         elements,
-        setElements
+        setElements,
+        onUndoRedo
     );
 
     useEffect(() => {

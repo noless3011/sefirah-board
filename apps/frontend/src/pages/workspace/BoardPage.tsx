@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import type { CanvasElementAppearance, Thread, CanvasElement, Board } from "@sefirah/shared";
 
@@ -54,6 +54,12 @@ const BoardPage: React.FC = () => {
     const socket = useSocket();
     
     // Custom Hooks
+    const syncHandlersRef = useRef<{
+        emitElementCreate?: (element: CanvasElement) => void;
+        emitElementUpdate?: (id: string, changes: Partial<CanvasElement>) => void;
+        emitElementDelete?: (id: string) => void;
+    }>({});
+
     const {
         elements,
         selectedIds,
@@ -69,7 +75,37 @@ const BoardPage: React.FC = () => {
         canRedo,
         undo,
         redo,
-    } = useCanvasElements(boardId!);
+    } = useCanvasElements(boardId!, (from, to) => {
+        const { emitElementCreate, emitElementUpdate, emitElementDelete } = syncHandlersRef.current;
+        if (!emitElementCreate || !emitElementUpdate || !emitElementDelete) return;
+
+        // 1. Deleted: in from but not in to
+        const toIds = new Set(to.map(el => el.id));
+        from.forEach(el => {
+            if (!toIds.has(el.id)) {
+                emitElementDelete(el.id);
+            }
+        });
+
+        // 2. Created: in to but not in from
+        const fromIds = new Set(from.map(el => el.id));
+        to.forEach(el => {
+            if (!fromIds.has(el.id)) {
+                emitElementCreate(el);
+            }
+        });
+
+        // 3. Updated: in both, but properties are different
+        const fromMap = new Map(from.map(el => [el.id, el]));
+        to.forEach(el => {
+            const beforeEl = fromMap.get(el.id);
+            if (beforeEl) {
+                if (JSON.stringify(beforeEl) !== JSON.stringify(el)) {
+                    emitElementUpdate(el.id, el);
+                }
+            }
+        });
+    });
 
     const {
         cursors,
@@ -84,6 +120,15 @@ const BoardPage: React.FC = () => {
         updateElement,
         deleteElement
     );
+
+    // Sync handlers to ref for useCanvasElements' onUndoRedo callback
+    useEffect(() => {
+        syncHandlersRef.current = {
+            emitElementCreate,
+            emitElementUpdate,
+            emitElementDelete
+        };
+    }, [emitElementCreate, emitElementUpdate, emitElementDelete]);
 
     // We instantiate useCanvas here so we can pass its state/methods down
     const {
@@ -585,11 +630,28 @@ const BoardPage: React.FC = () => {
         }
     };
 
-    // Global keydown handler to delete elements
+    // Global keydown handler to delete elements and handle undo/redo shortcuts
     useEffect(() => {
         const handleGlobalKeyDown = (e: KeyboardEvent) => {
             const activeTag = document.activeElement?.tagName;
             if (activeTag === "INPUT" || activeTag === "TEXTAREA" || document.activeElement?.getAttribute("contenteditable") === "true") {
+                return;
+            }
+
+            // Undo: Ctrl + Z or Cmd + Z
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+                e.preventDefault();
+                undo();
+                return;
+            }
+
+            // Redo: Ctrl + Y, Cmd + Y, or Ctrl + Shift + Z / Cmd + Shift + Z
+            if (
+                ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") ||
+                ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z")
+            ) {
+                e.preventDefault();
+                redo();
                 return;
             }
 
@@ -603,7 +665,7 @@ const BoardPage: React.FC = () => {
 
         window.addEventListener("keydown", handleGlobalKeyDown);
         return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-    }, [selectedIds, deleteElement, emitElementDelete]);
+    }, [selectedIds, deleteElement, emitElementDelete, undo, redo]);
 
     const handleMouseMove = (e: React.MouseEvent) => {
         const coords = screenToCanvas(e.clientX, e.clientY);
