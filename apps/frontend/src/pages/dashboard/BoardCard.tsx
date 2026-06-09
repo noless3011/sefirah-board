@@ -105,6 +105,7 @@ export interface BoardCardProps {
     onVisibility?: (board: Board) => void;
     onBadge?: (board: Board) => void;
     onDelete?: (id: string) => void;
+    onLeave?: (board: Board) => void;
 }
 
 export const BoardCard: React.FC<BoardCardProps> = ({
@@ -115,7 +116,8 @@ export const BoardCard: React.FC<BoardCardProps> = ({
     onRename,
     onVisibility,
     onBadge,
-    onDelete
+    onDelete,
+    onLeave
 }) => {
     const [tiltStyle, setTiltStyle] = useState<React.CSSProperties>({
         transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
@@ -155,7 +157,7 @@ export const BoardCard: React.FC<BoardCardProps> = ({
         });
     };
 
-    const hasOptions = (onRename || onVisibility || onBadge || onDelete) && setActiveMenuId;
+    const hasOptions = (onRename || onVisibility || onBadge || onDelete || onLeave) && setActiveMenuId;
 
     return (
         <div 
@@ -255,6 +257,14 @@ export const BoardCard: React.FC<BoardCardProps> = ({
                                                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50/70 transition cursor-pointer"
                                                 >
                                                     Delete
+                                                </button>
+                                            )}
+                                            {onLeave && (
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); onLeave(board); }}
+                                                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50/70 transition cursor-pointer"
+                                                >
+                                                    Leave Board
                                                 </button>
                                             )}
                                         </div>

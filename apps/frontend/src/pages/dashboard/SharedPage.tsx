@@ -1,16 +1,55 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sharedService } from '../../services/shared.service';
+import { accountSettingsApi } from '../../api/accountSettings.api';
+import { collaborationApi } from '../../api/board.api';
 import type { Board } from '@sefirah/shared';
 import { BoardCard } from './BoardCard';
+
+interface LeaveConfirmModalProps {
+  board: Board;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+const LeaveConfirmModal = ({ board, onClose, onConfirm }: LeaveConfirmModalProps) => {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-xl border border-slate-100 animate-in fade-in zoom-in duration-200">
+        <h3 className="text-lg font-bold text-slate-900 mb-2">Leave Board</h3>
+        <p className="text-slate-500 text-sm mb-6 leading-relaxed font-sans">
+          Are you sure you want to leave <strong className="text-slate-800 font-semibold">"{board.title}"</strong>? You will lose access to this workspace and will need a new invite to rejoin.
+        </p>
+        <div className="flex justify-end gap-3 font-sans">
+          <button 
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl text-slate-550 hover:bg-slate-50 text-sm font-medium transition cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium transition shadow-sm cursor-pointer"
+          >
+            Leave Board
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function SharedPage() {
   const [boards, setBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [leaveModalBoard, setLeaveModalBoard] = useState<Board | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Fetch shared boards
     sharedService.getSharedBoards()
       .then(data => {
         setBoards(data || []);
@@ -21,7 +60,28 @@ export default function SharedPage() {
         setBoards([]);
         setLoading(false);
       });
+
+    // Fetch current user info
+    accountSettingsApi.getMe()
+      .then(res => {
+        setCurrentUser(res.data);
+      })
+      .catch(err => {
+        console.error("Failed to fetch current user profile", err);
+      });
   }, []);
+
+  const handleLeaveConfirm = async () => {
+    if (!leaveModalBoard || !currentUser) return;
+    try {
+      await collaborationApi.removeCollaborator(leaveModalBoard.id, currentUser.id);
+      setBoards(prev => prev.filter(b => b.id !== leaveModalBoard.id));
+      setLeaveModalBoard(null);
+    } catch (err) {
+      console.error("Failed to leave board", err);
+      alert("Failed to leave the board. Please try again.");
+    }
+  };
 
   const filteredItems = boards.filter(item => 
     item.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -94,9 +154,21 @@ export default function SharedPage() {
               key={board.id}
               board={board}
               navigate={navigate}
+              activeMenuId={activeMenuId}
+              setActiveMenuId={setActiveMenuId}
+              onLeave={(b) => setLeaveModalBoard(b)}
             />
           ))}
         </div>
+      )}
+
+      {/* Leave Board Confirmation Modal */}
+      {leaveModalBoard && (
+        <LeaveConfirmModal
+          board={leaveModalBoard}
+          onClose={() => setLeaveModalBoard(null)}
+          onConfirm={handleLeaveConfirm}
+        />
       )}
     </div>
   );
