@@ -200,19 +200,19 @@ const DashboardLayout: React.FC = () => {
                 {/* Row 1: Logo + Actions */}
                 <div className="flex h-14 items-center justify-between px-4 sm:h-16 sm:px-6">
                     {/* Logo & Search */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-1 min-w-0 items-center gap-2 sm:flex-initial sm:gap-4">
                         <div
                             onClick={() => navigate("/dashboard")}
-                            className="cursor-pointer text-base font-bold tracking-tight text-slate-900 transition hover:opacity-90 select-none sm:text-lg"
+                            className="cursor-pointer select-none text-sm font-bold tracking-tight text-slate-900 transition hover:opacity-90 min-[360px]:text-base sm:text-lg"
                         >
                             Sefirah Board
                         </div>
 
-                        {/* Search — ẩn trên mobile */}
-                        <div className="relative hidden w-64 sm:block">
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                        {/* Search */}
+                        <div className="relative flex-1 min-w-[80px] max-w-[200px] sm:w-64 sm:flex-initial sm:max-w-none">
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 sm:pl-3">
                                 <svg
-                                    className="h-4 w-4 text-slate-400"
+                                    className="h-3.5 w-3.5 text-slate-400 sm:h-4 sm:w-4"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -224,7 +224,7 @@ const DashboardLayout: React.FC = () => {
                             </span>
                             <input
                                 type="text"
-                                placeholder="Search boards..."
+                                placeholder="Search..."
                                 value={searchQuery}
                                 onChange={(e) => {
                                     const newParams = new URLSearchParams(
@@ -235,7 +235,7 @@ const DashboardLayout: React.FC = () => {
                                     else newParams.delete("search");
                                     setSearchParams(newParams);
                                 }}
-                                className="w-full rounded-lg border-none bg-[#F1F3F9] py-1.5 pl-9 pr-4 text-sm text-slate-600 outline-none transition focus:bg-[#E5E7EB]"
+                                className="w-full rounded-lg border-none bg-[#F1F3F9] py-1.5 pl-8 pr-3 text-xs text-slate-600 outline-none transition focus:bg-[#E5E7EB] sm:pl-9 sm:pr-4 sm:text-sm"
                             />
                         </div>
                     </div>
