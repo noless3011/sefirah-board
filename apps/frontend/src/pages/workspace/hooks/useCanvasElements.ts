@@ -74,16 +74,18 @@ export function useCanvasElements(
     }, [elements, boardId, loading]);
 
     const addElement = useCallback(
-        (element: CanvasElement) => {
+        (element: CanvasElement, skipHistory = false) => {
             const before = [...elementsRef.current];
             setElements((prev) => [...prev, element]);
-            pushHistory("add", before, [...before, element]);
+            if (!skipHistory) {
+                pushHistory("add", before, [...before, element]);
+            }
         },
         [pushHistory]
     );
 
     const updateElement = useCallback(
-        (id: string, changes: Partial<CanvasElement>) => {
+        (id: string, changes: Partial<CanvasElement>, skipHistory = false) => {
             const before = [...elementsRef.current];
             setElements((prev) =>
                 prev.map((el) =>
@@ -93,7 +95,9 @@ export function useCanvasElements(
             const after = before.map((el) =>
                 el.id === id ? ({ ...el, ...changes } as CanvasElement) : el
             );
-            pushHistory("update", before, after);
+            if (!skipHistory) {
+                pushHistory("update", before, after);
+            }
         },
         [pushHistory]
     );
@@ -151,5 +155,6 @@ export function useCanvasElements(
         canRedo,
         undo,
         redo,
+        pushHistory,
     };
 }

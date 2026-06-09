@@ -12,14 +12,14 @@ interface CanvasProps {
     elements: CanvasElement[];
     selectedIds: string[];
     onSelect: (id: string | null, addToSelection?: boolean) => void;
-    onUpdateElement: (id: string, changes: Partial<CanvasElement>) => void;
+    onUpdateElement: (id: string, changes: Partial<CanvasElement>, skipHistory?: boolean) => void;
     collaboratorCursors: CollaboratorCursorInfo[];
     viewport: { x: number; y: number; zoom: number };
     setViewport: React.Dispatch<React.SetStateAction<{ x: number; y: number; zoom: number }>>;
     onCanvasClick?: () => void;
     activeTool: ToolType;
     setActiveTool: (tool: ToolType) => void;
-    onAddElement: (element: CanvasElement) => void;
+    onAddElement: (element: CanvasElement, skipHistory?: boolean) => void;
     penColor?: string;
     penWidth?: number;
     canvasBgColor?: string;
@@ -30,6 +30,7 @@ interface CanvasProps {
     endPan: () => void;
     isPanning: boolean;
     screenToCanvas: (screenX: number, screenY: number) => { x: number; y: number };
+    pushHistory: (type: "add" | "remove" | "update", before: CanvasElement[], after: CanvasElement[]) => void;
 }
 
 const Canvas: React.FC<CanvasProps> = ({
@@ -54,6 +55,7 @@ const Canvas: React.FC<CanvasProps> = ({
     endPan,
     isPanning,
     screenToCanvas,
+    pushHistory,
 }) => {
     const [editingElementId, setEditingElementId] = useState<string | null>(null);
 
@@ -138,6 +140,10 @@ const Canvas: React.FC<CanvasProps> = ({
     const drawingLineIdRef = useRef<string | null>(null);
     const drawingPointsRef = useRef<{ x: number; y: number }[]>([]);
 
+    // Baselines for undo/redo consolidation
+    const penStartElementsRef = useRef<CanvasElement[] | null>(null);
+    const dragStartElementsRef = useRef<CanvasElement[] | null>(null);
+
     const handleElementMouseDown = (e: React.MouseEvent, id: string) => {
         if (e.button === 0 && (activeTool === "select" || activeTool === "connector")) {
             e.stopPropagation();
@@ -182,6 +188,8 @@ const Canvas: React.FC<CanvasProps> = ({
             const element = elements.find(el => el.id === id);
             if (!element) return;
 
+            dragStartElementsRef.current = [...elements];
+
             if (!selectedIds.includes(id)) {
                 onSelect(id, e.shiftKey || e.ctrlKey || e.metaKey);
             }
@@ -205,6 +213,7 @@ const Canvas: React.FC<CanvasProps> = ({
     const handleResizeStart = (e: React.MouseEvent, el: CanvasElement, handle: "tl" | "tr" | "bl" | "br") => {
         e.stopPropagation();
         e.preventDefault();
+        dragStartElementsRef.current = [...elements];
         resizingRef.current = {
             id: el.id,
             handle,
@@ -266,7 +275,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 y: newY,
                 width: newWidth,
                 height: newHeight,
-            });
+            }, true);
             return;
         }
 
@@ -279,7 +288,7 @@ const Canvas: React.FC<CanvasProps> = ({
                     drawingPointsRef.current.push(coords);
                     onUpdateElement(drawingLineIdRef.current, {
                         points: [...drawingPointsRef.current]
-                    });
+                    }, true);
                 }
             }
             return;
@@ -297,12 +306,12 @@ const Canvas: React.FC<CanvasProps> = ({
                 }));
                 onUpdateElement(id, {
                     points: shiftedPoints
-                });
+                }, true);
             } else {
                 onUpdateElement(id, {
                     x: initialX + dx,
                     y: initialY + dy
-                });
+                }, true);
             }
         }
     };
@@ -314,8 +323,19 @@ const Canvas: React.FC<CanvasProps> = ({
         if (activeTool === "pen" && isDrawingRef.current) {
             isDrawingRef.current = false;
             drawingLineIdRef.current = null;
-            // Keep pen tool active to allow continuous drawing of multiple strokes
+            if (penStartElementsRef.current) {
+                pushHistory("add", penStartElementsRef.current, elements);
+                penStartElementsRef.current = null;
+            }
         }
+
+        if ((draggingRef.current || resizingRef.current) && dragStartElementsRef.current) {
+            if (JSON.stringify(dragStartElementsRef.current) !== JSON.stringify(elements)) {
+                pushHistory("update", dragStartElementsRef.current, elements);
+            }
+            dragStartElementsRef.current = null;
+        }
+
         draggingRef.current = null;
         initialPointsRef.current = null;
         resizingRef.current = null;
@@ -332,6 +352,7 @@ const Canvas: React.FC<CanvasProps> = ({
 
             if (activeTool === "pen") {
                 isDrawingRef.current = true;
+                penStartElementsRef.current = [...elements];
                 const lineId = crypto.randomUUID();
                 drawingLineIdRef.current = lineId;
                 drawingPointsRef.current = [coords];
@@ -357,7 +378,7 @@ const Canvas: React.FC<CanvasProps> = ({
                     updatedAt: new Date().toISOString(),
                 } as any;
 
-                onAddElement(newLine);
+                onAddElement(newLine, true);
                 return;
             }
 

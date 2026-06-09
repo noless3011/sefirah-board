@@ -75,6 +75,7 @@ const BoardPage: React.FC = () => {
         canRedo,
         undo,
         redo,
+        pushHistory,
     } = useCanvasElements(boardId!, (from, to) => {
         const { emitElementCreate, emitElementUpdate, emitElementDelete } = syncHandlersRef.current;
         if (!emitElementCreate || !emitElementUpdate || !emitElementDelete) return;
@@ -259,8 +260,8 @@ const BoardPage: React.FC = () => {
         });
     };
 
-    const handleAddElementDirect = (newElement: CanvasElement) => {
-        addElement(newElement);
+    const handleAddElementDirect = (newElement: CanvasElement, skipHistory?: boolean) => {
+        addElement(newElement, skipHistory);
         emitElementCreate(newElement);
     };
 
@@ -703,8 +704,8 @@ const BoardPage: React.FC = () => {
                     elements={elements}
                     selectedIds={selectedIds}
                     onSelect={selectElement}
-                    onUpdateElement={(id, changes) => {
-                        updateElement(id, changes);
+                    onUpdateElement={(id, changes, skipHistory) => {
+                        updateElement(id, changes, skipHistory);
                         emitElementUpdate(id, changes);
                     }}
                     collaboratorCursors={cursors}
@@ -723,6 +724,7 @@ const BoardPage: React.FC = () => {
                     endPan={endPan}
                     isPanning={isPanning}
                     screenToCanvas={screenToCanvas}
+                    pushHistory={pushHistory}
                 />
             </div>
 
