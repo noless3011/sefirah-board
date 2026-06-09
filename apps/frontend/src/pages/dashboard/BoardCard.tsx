@@ -157,7 +157,8 @@ export const BoardCard: React.FC<BoardCardProps> = ({
         });
     };
 
-    const hasOptions = (onRename || onVisibility || onBadge || onDelete || onLeave) && setActiveMenuId;
+    const isOwner = board.type === "personal";
+    const hasOptions = ((isOwner && (onRename || onVisibility || onBadge || onDelete)) || (!isOwner && onLeave)) && setActiveMenuId;
 
     return (
         <div 
@@ -227,7 +228,7 @@ export const BoardCard: React.FC<BoardCardProps> = ({
                                     <>
                                         <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }} />
                                         <div className="absolute right-0 mt-1 w-44 rounded-xl border border-slate-150 bg-white p-1.5 shadow-lg ring-1 ring-black/5 z-30">
-                                            {onRename && (
+                                            {isOwner && onRename && (
                                                 <button 
                                                     onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); onRename(board); }}
                                                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
@@ -235,7 +236,7 @@ export const BoardCard: React.FC<BoardCardProps> = ({
                                                     Rename
                                                 </button>
                                             )}
-                                            {onVisibility && (
+                                            {isOwner && onVisibility && (
                                                 <button 
                                                     onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); onVisibility(board); }}
                                                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
@@ -243,7 +244,7 @@ export const BoardCard: React.FC<BoardCardProps> = ({
                                                     Visibility...
                                                 </button>
                                             )}
-                                            {onBadge && (
+                                            {isOwner && onBadge && (
                                                 <button 
                                                     onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); onBadge(board); }}
                                                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
@@ -251,7 +252,7 @@ export const BoardCard: React.FC<BoardCardProps> = ({
                                                     Change Badge...
                                                 </button>
                                             )}
-                                            {onDelete && (
+                                            {isOwner && onDelete && (
                                                 <button 
                                                     onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); onDelete(board.id); }}
                                                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50/70 transition cursor-pointer"
@@ -259,7 +260,7 @@ export const BoardCard: React.FC<BoardCardProps> = ({
                                                     Delete
                                                 </button>
                                             )}
-                                            {onLeave && (
+                                            {!isOwner && onLeave && (
                                                 <button 
                                                     onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); onLeave(board); }}
                                                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50/70 transition cursor-pointer"

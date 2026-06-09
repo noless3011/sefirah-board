@@ -644,51 +644,53 @@ const DashboardPage: React.FC = () => {
                                 </span>
                                 
                                 {/* Row actions button */}
-                                <div className="relative">
-                                    <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActiveMenuId(activeMenuId === board.id ? null : board.id);
-                                        }}
-                                        className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400 hover:text-slate-700 transition cursor-pointer"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                        </svg>
-                                    </button>
-                                    
-                                    {activeMenuId === board.id && (
-                                        <>
-                                            <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }} />
-                                            <div className="absolute right-0 mt-1 w-44 rounded-xl border border-slate-150 bg-white p-1.5 shadow-lg ring-1 ring-black/5 z-30">
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); setModal({ type: "rename", board }); }}
-                                                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-                                                >
-                                                    Rename
-                                                </button>
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); setModal({ type: "visibility", board }); }}
-                                                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-                                                >
-                                                    Visibility...
-                                                </button>
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); setModal({ type: "badge", board }); }}
-                                                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-                                                >
-                                                    Change Badge...
-                                                </button>
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); handleDelete(board.id); }}
-                                                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50/70 transition cursor-pointer"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
+                                {board.type === "personal" && (
+                                    <div className="relative">
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setActiveMenuId(activeMenuId === board.id ? null : board.id);
+                                            }}
+                                            className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                            </svg>
+                                        </button>
+                                        
+                                        {activeMenuId === board.id && (
+                                            <>
+                                                <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }} />
+                                                <div className="absolute right-0 mt-1 w-44 rounded-xl border border-slate-150 bg-white p-1.5 shadow-lg ring-1 ring-black/5 z-30">
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); setModal({ type: "rename", board }); }}
+                                                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                                                    >
+                                                        Rename
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); setModal({ type: "visibility", board }); }}
+                                                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                                                    >
+                                                        Visibility...
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); setModal({ type: "badge", board }); }}
+                                                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                                                    >
+                                                        Change Badge...
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); handleDelete(board.id); }}
+                                                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50/70 transition cursor-pointer"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
